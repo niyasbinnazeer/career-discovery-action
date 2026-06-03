@@ -1,20 +1,14 @@
 name: Career Discovery
 
 on:
-  # Runs every 2 hours. GitHub cron is best-effort and may delay 5-30 min under
-  # load — fine for job discovery. Change the expression to run more often.
   schedule:
     - cron: "0 */2 * * *"
-  # Manual trigger button in the Actions tab — useful for testing or draining
-  # the backlog on demand.
   workflow_dispatch:
 
 jobs:
   discover:
     runs-on: ubuntu-latest
-    # GitHub free tier allows 6h per job; we'll finish in 2-5 min.
     timeout-minutes: 30
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
