@@ -1,5 +1,3 @@
-# career-intelligence
-
 # Career Discovery — GitHub Actions setup
 
 This folder is the **discovery cron** rewritten as a GitHub Action. It does

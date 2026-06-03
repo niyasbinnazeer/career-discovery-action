@@ -1,0 +1,13 @@
+{
+  "name": "career-discovery-action",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Career discovery cron — runs as a GitHub Action, writes to Cloudflare KV via REST",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "discover": "node discovery.mjs"
+  }
+}
