@@ -24,13 +24,11 @@
 // CONFIG — same shape as the Worker version
 // =============================================================================
 const CONFIG = {
-  // No subrequest cap on GitHub Actions runners — we can analyze far more per
-  // run than on Cloudflare's free tier. The real limits now are (a) how long
-  // the GitHub Actions job runs (cap is 6 hours; we'll be well under), and (b)
-  // your Gemini Flash-Lite free tier (500 requests/day). At every-2h cron with
-  // 30 analyses/run = 360/day, you're still within Gemini's free quota with
-  // headroom. Push higher if you bump the cron frequency.
-  MAX_ANALYZE_PER_RUN: 30,
+  // No subrequest cap on GitHub Actions. Raised to 40 to handle the bigger pool
+  // now that India queries fire every run. At 12 cron runs/day × 40 = 480 jobs
+  // analyzed/day max — within Gemini Flash-Lite free tier (500/day) with margin;
+  // Haiku absorbs overflow if Gemini hits its cap.
+  MAX_ANALYZE_PER_RUN: 40,
 
   // Job dedup keys persist in KV for 120 days, then expire — long enough that
   // re-postings of the same job don't trigger duplicate analysis.
@@ -49,6 +47,7 @@ const CONFIG = {
 
   ADZUNA_ENABLED: true,
   ADZUNA_COUNTRIES: ["in","gb","de","us","ca","au","ch","nl","fr","sg"],
+  // Global queries — used across all countries in the matrix rotation.
   ADZUNA_QUERIES: [
     "antibody purification", "protein purification", "mAb scientist",
     "AKTA chromatography", "bioprocess scientist", "downstream processing",
@@ -58,12 +57,23 @@ const CONFIG = {
     "PhD protein engineering", "PhD computational biology",
     "doctoral researcher biology",
   ],
-  // With no subrequest cap, we can sweep more of the Adzuna matrix per run.
-  // 30 calls × 12 cron runs/day = 360/day, spread across 10 countries = ~36/country/day.
-  // Adzuna free tier is roughly 250 calls/month/country = ~8/country/day; ABOVE that
-  // cap, calls return 403 (we'll see them as errors in the report — drop this if so).
-  // Start with a conservative 12 here; raise once we've confirmed quota behavior.
-  ADZUNA_CALLS_PER_RUN: 12,
+  // India-specific queries — fire on EVERY run, regardless of rotation, because
+  // Indian biopharma roles are underrepresented in the global queries and Naukri/
+  // LinkedIn-style content shows up under more local phrasing. These run IN ADDITION
+  // to the rotation, biased toward India coverage as requested.
+  ADZUNA_INDIA_QUERIES: [
+    "research associate biotech",
+    "scientist biocon syngene",
+    "quality control pharma",
+    "biopharma scientist",
+    "biotechnology associate",
+    "research scientist bangalore",
+    "scientist hyderabad pharma",
+    "junior research fellow biology",
+  ],
+  // Per-run cap on Adzuna API calls. With India queries firing every run (8 of these)
+  // plus rotation slice (8 more) = 16 calls/run total.
+  ADZUNA_CALLS_PER_RUN: 8,
   ADZUNA_RESULTS_PER_CALL: 25,
   ADZUNA_MAX_DAYS_OLD: 30,
 };
@@ -394,6 +404,14 @@ async function main() {
   for (const t of CONFIG.ATS.lever) collected.push(...await fetchLever(t, report));
   for (const t of CONFIG.ATS.ashby) collected.push(...await fetchAshby(t, report));
   if (CONFIG.ADZUNA_ENABLED && ENV.ADZUNA_APP_ID && ENV.ADZUNA_APP_KEY) {
+    // India queries fire on EVERY run (in addition to rotation). This biases the
+    // pipeline toward Indian biopharma roles, which are otherwise underrepresented
+    // and which catch a lot of Naukri/LinkedIn-aggregated content that wouldn't
+    // surface through the global queries.
+    for (const query of CONFIG.ADZUNA_INDIA_QUERIES) {
+      collected.push(...await fetchAdzuna("in", query, report));
+    }
+    // Rotation across the full country×query matrix — different slice each run.
     const slice = await pickAdzunaSlice();
     for (const { country, query } of slice) {
       collected.push(...await fetchAdzuna(country, query, report));
