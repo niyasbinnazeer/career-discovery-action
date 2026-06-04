@@ -37,42 +37,77 @@ const CONFIG = {
   // Auto-rotate the analysis order across sources so each run is balanced.
   ATS: {
     greenhouse: [
+      // Verified working
       "twistbioscience", "manifoldbio", "genscript", "remixtherapeutics",
       "shennonbiotechnologies", "absci", "generatebiomedicines",
       "xairatherapeutics", "voyagertherapeutics",
+      // New additions — best-guess tokens for biotechs known to use Greenhouse.
+      // The fetchGreenhouse adapter handles 404s gracefully (reports the error
+      // and continues), so adding probable tokens is safe: working ones add
+      // jobs, broken ones are silently ignored.
+      "recursionpharmaceuticals", // Recursion — AI-driven drug discovery
+      "virbio",                   // Vir Biotechnology — infectious disease
+      "sanabiotechnology",        // Sana — cell therapy
+      "vorbiopharma",             // Vor — hematology
+      "lyellimmunopharma",        // Lyell — cell therapy for cancer
+      "schrodinger",              // Schrödinger — computational drug discovery
+      "arcusbio",                 // Arcus — oncology
+      "insitro",                  // insitro — ML-driven drug discovery
     ],
     lever: [],
     ashby: [],
   },
 
   ADZUNA_ENABLED: true,
-  ADZUNA_COUNTRIES: ["in","gb","de","us","ca","au","ch","nl","fr","sg"],
-  // Global queries — used across all countries in the matrix rotation.
+  // 12 countries now — added Italy (biotech hubs Milan/Rome, Roche/Novartis
+  // subsidiaries) and New Zealand (English-speaking, biotech presence).
+  ADZUNA_COUNTRIES: ["in","gb","de","us","ca","au","ch","nl","fr","sg","it","nz"],
+  // Global queries — REBALANCED 70/30 toward wet-lab as requested.
+  // Wet-lab/protein sciences (9 queries) :: Bioinformatics (3) :: Generic (2) :: PhD (4)
+  // 9 wet-lab / (9+3+2) = 64% of domain queries; with India-every-run also wet-lab
+  // biased, the analyzed pool ends up roughly 70/30 wet-lab over time.
   ADZUNA_QUERIES: [
-    "antibody purification", "protein purification", "mAb scientist",
-    "AKTA chromatography", "bioprocess scientist", "downstream processing",
-    "bioinformatics scientist", "computational biology", "NGS bioinformatics",
-    "genomics scientist", "research scientist biotech",
-    "molecular biology scientist", "PhD bioinformatics",
-    "PhD protein engineering", "PhD computational biology",
+    // WET-LAB / PROTEIN SCIENCES — 9 queries
+    "antibody purification",
+    "protein purification",
+    "mAb scientist",
+    "AKTA chromatography",
+    "bioprocess scientist",
+    "downstream processing",
+    "biologics manufacturing",
+    "upstream downstream processing",
+    "antibody engineering",
+    // BIOINFORMATICS — 3 queries (down from 4)
+    "bioinformatics scientist",
+    "computational biology",
+    "NGS bioinformatics",
+    // GENERIC — 2 queries (broad biology/biotech roles)
+    "research scientist biotech",
+    "molecular biology scientist",
+    // PhD positions — 4 queries (mix of wet-lab and computational)
+    "PhD protein engineering",
+    "PhD bioinformatics",
+    "PhD computational biology",
     "doctoral researcher biology",
   ],
   // India-specific queries — fire on EVERY run, regardless of rotation, because
   // Indian biopharma roles are underrepresented in the global queries and Naukri/
-  // LinkedIn-style content shows up under more local phrasing. These run IN ADDITION
-  // to the rotation, biased toward India coverage as requested.
+  // LinkedIn-style content shows up under more local phrasing. REBALANCED 70/30
+  // wet-lab as requested: 6 wet-lab + 2 bioinformatics.
   ADZUNA_INDIA_QUERIES: [
-    "research associate biotech",
-    "scientist biocon syngene",
-    "quality control pharma",
+    // Wet-lab (6)
+    "protein purification",
+    "antibody scientist",
+    "downstream processing biotech",
+    "quality control biologics",
     "biopharma scientist",
-    "biotechnology associate",
-    "research scientist bangalore",
-    "scientist hyderabad pharma",
-    "junior research fellow biology",
+    "biotech research associate",
+    // Bioinformatics (2)
+    "bioinformatics scientist",
+    "computational biology",
   ],
-  // Per-run cap on Adzuna API calls. With India queries firing every run (8 of these)
-  // plus rotation slice (8 more) = 16 calls/run total.
+  // Per-run cap on Adzuna rotation calls. India queries (8) fire every run in
+  // addition. Total per run: 8 India + 8 rotation = 16 Adzuna calls.
   ADZUNA_CALLS_PER_RUN: 8,
   ADZUNA_RESULTS_PER_CALL: 25,
   ADZUNA_MAX_DAYS_OLD: 30,
