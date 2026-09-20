@@ -18,12 +18,12 @@ on:
 
 concurrency:
   group: career-discovery
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   discover:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4

@@ -152,7 +152,7 @@ const CONFIG = {
 };
 
 const BROWSER_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
-const FETCH_TIMEOUT_MS = 8000;
+const FETCH_TIMEOUT_MS = 4000;
 
 function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
@@ -363,7 +363,7 @@ function resolveRelative(maybeRelative, base) {
   }
 }
 
-async function resolveDirectApplyUrl(pageUrl, maxHops = 5) {
+async function resolveDirectApplyUrl(pageUrl, maxHops = 2) {
   if (!pageUrl) return null;
   const isAggregator = (u) => /adzuna\.|jooble\.org/i.test(u);
   if (!isAggregator(pageUrl)) return pageUrl;
@@ -380,7 +380,7 @@ async function resolveDirectApplyUrl(pageUrl, maxHops = 5) {
           "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
           "Accept-Language": "en-US,en;q=0.9",
         },
-        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+        signal: AbortSignal.timeout(3000),
       });
     } catch {
       return !isAggregator(current) ? current : null;
@@ -997,6 +997,9 @@ async function main() {
 
   // ---- Filter + Dedup + Direct Apply + Analyze -----------------------------
   let analyzed = 0, passed = 0, dupes = 0;
+  let linkedInDetailFails = 0;
+  const TIME_LIMIT_MS = 10 * 60 * 1000; // 10-minute safe ceiling
+  const runStart = Date.now();
   const srcStats = {};
   const bump = (c, field) => {
     const k = (c || "?").toLowerCase();
@@ -1004,6 +1007,10 @@ async function main() {
   };
 
   for (const job of collected) {
+    if (Date.now() - runStart > TIME_LIMIT_MS) {
+      report.push(`Hit 10-minute safe time budget (${analyzed} analyzed) — wrapping up cleanly`);
+      break;
+    }
     if (analyzed >= CONFIG.MAX_ANALYZE_PER_RUN) {
       report.push(`hit MAX_ANALYZE_PER_RUN (${CONFIG.MAX_ANALYZE_PER_RUN} jobs analyzed) — remaining roll to next run`);
       break;
@@ -1045,17 +1052,24 @@ async function main() {
       }
     }
 
-    // Just-in-time LinkedIn detail fetch
+    // Just-in-time LinkedIn detail fetch (with circuit breaker to prevent hanging)
     if (job.isLinkedIn && job.id && job.description === job.title) {
-      try {
-        const detail = await fetchLinkedInDetail(job.id);
-        if (detail.snippet) {
-          job.description = detail.snippet;
-          job.thinText = false;
+      if (linkedInDetailFails < 3) {
+        try {
+          const detail = await fetchLinkedInDetail(job.id);
+          if (detail.snippet) {
+            job.description = detail.snippet;
+            job.thinText = false;
+          }
+          if (detail.postedDate) job.postedDate = detail.postedDate;
+          linkedInDetailFails = 0;
+        } catch (e) {
+          linkedInDetailFails++;
+          report.push(`linkedin detail error (${job.id}): ${e.message}`);
+          if (linkedInDetailFails >= 3) {
+            report.push(`LinkedIn circuit breaker active — using job cards directly`);
+          }
         }
-        if (detail.postedDate) job.postedDate = detail.postedDate;
-      } catch (e) {
-        report.push(`linkedin detail error (${job.id}): ${e.message}`);
       }
     }
 
