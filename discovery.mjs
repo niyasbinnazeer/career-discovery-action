@@ -34,6 +34,8 @@ const CONFIG = {
     "Pune",
     "Mumbai",
     "Ahmedabad",
+    "Chennai",
+    "Delhi NCR",
     "India",
   ],
   LINKEDIN_INDIA_QUERIES: [
@@ -42,6 +44,9 @@ const CONFIG = {
     '"monoclonal antibody" OR "bispecific" OR "mab"',
     '"bioinformatics" OR "computational biology" OR "NGS"',
     '"scientist" AND ("biologics" OR "protein")',
+    '"discovery biology" OR "protein scientist"',
+    '"Syngene" OR "Biocon" OR "Dr. Reddy" OR "Enzene"',
+    '"Serum Institute" OR "Reliance Life Sciences" OR "Sun Pharma"',
   ],
 
   // Abroad: STRICTLY PhD / Doctoral Positions (including Asian research hubs: Japan, South Korea, China, Singapore)
@@ -50,22 +55,37 @@ const CONFIG = {
     "South Korea",
     "China",
     "Singapore",
-    "Europe",
     "Germany",
     "United Kingdom",
-    "United States",
     "Switzerland",
+    "Netherlands",
+    "Sweden",
+    "United States",
+    "Canada",
     "Australia",
+    "Europe",
   ],
   LINKEDIN_PHD_QUERIES: [
-    '"PhD student" OR "PhD candidate" OR "Doctoral researcher" OR "PhD position"',
+    '"PhD student" AND ("protein" OR "biology" OR "bioinformatics")',
+    '"PhD candidate" AND ("biophysics" OR "structural biology" OR "genomics")',
+    '"Doctoral researcher" OR "PhD position" OR "PhD student"',
   ],
-  LINKEDIN_MAX_PER_QUERY: 20,
+  LINKEDIN_MAX_PER_QUERY: 30,
 
   // ---- 3. INTERNATIONAL PHD RSS (jobRxiv) ----
   // WP Job Manager RSS from jobRxiv — structured doctoral / academic research positions
   JOBRXIV_ENABLED: true,
-  JOBRXIV_KEYWORDS: ["phd", "doctoral", "protein", "bioinformatics"],
+  JOBRXIV_KEYWORDS: [
+    "phd",
+    "doctoral",
+    "protein",
+    "bioinformatics",
+    "structural biology",
+    "biophysics",
+    "genomics",
+    "molecular biology",
+    "proteomics",
+  ],
 
   // ---- 4. ADZUNA AGGREGATOR API ----
   ADZUNA_ENABLED: true,
@@ -172,8 +192,14 @@ const STRONG_POSITIVE = [
   "bioinformatic", "ngs", "qiime", "16s", "microbiome", "computational biolog",
   "genomic", "transcriptomic", "multi-omic", "rna-seq", "sequencing",
   "alphafold", "structural biolog", "protein engineering", "neurogenetic",
+  "biochemistry", "molecular biology", "cell culture", "elisa", "western blot",
+  "mass spectrometry", "lc-ms", "hplc", "fermentation", "upstream",
+  "biopharma", "r&d scientist", "discovery biology", "proteomic",
 ];
-const PHD_POSITIVE = ["phd", "ph.d", "doctoral", "research fellow", "predoctoral"];
+const PHD_POSITIVE = [
+  "phd", "ph.d", "doctoral", "doctorate", "research scholar", "graduate student",
+  "phd candidate", "phd position", "phd student", "predoctoral", "research fellow",
+];
 const HARD_NEGATIVE = [
   "sales", "business development", "account manager", "medical coding", "billing",
   "call center", "call centre", "customer support", "customer relationship",
@@ -187,16 +213,34 @@ const HARD_NEGATIVE = [
   "legal counsel", "legal intern", "corporate legal", "sap engineer", "sap ",
   "it support", "it engineer", "biostatistics", "program team lead",
   "surfactant", "fmcg", "cattle", "veterinary", "nursing",
-  "postdoc", "post-doc", "post doctoral", "postdoctoral",
 ];
 
-function prefilterPass(text, minScore = 2) {
+function prefilterPass(text, isPhd = false, minScore = 2) {
   const t = (text || "").toLowerCase();
-  if (t.length < 30) return false;
+  if (t.length < 20) return false;
+
+  // Filter out if explicitly a postdoc position (and not a PhD student role)
+  const isPostdocOnly = /(^|\b)post[\s-]?doc(toral)?\b/i.test(t) && !/\bphd\b|doctoral|graduate student/i.test(t);
+  if (isPostdocOnly) return false;
+
+  for (const kw of HARD_NEGATIVE) {
+    if (t.includes(kw)) return false;
+  }
+
+  // If from a PhD source or explicitly marked as PhD
+  if (isPhd || PHD_POSITIVE.some(kw => t.includes(kw))) {
+    const hasLifeScience = [
+      "protein", "biolog", "biochem", "genom", "genetic", "microbi", "cell",
+      "immunol", "neuro", "structur", "computational", "bioinform", "medic",
+      "biophysic", "molecular", "cancer", "metabolic", "chemistry", "proteom",
+      "assay", "sequencing", "drug discovery", "biotech", "life science"
+    ].some(kw => t.includes(kw));
+    if (hasLifeScience) return true;
+  }
+
   let score = 0;
   for (const kw of STRONG_POSITIVE) if (t.includes(kw)) score += 2;
   for (const kw of PHD_POSITIVE) if (t.includes(kw)) score += 1;
-  for (const kw of HARD_NEGATIVE) if (t.includes(kw)) score -= 3;
   return score >= minScore;
 }
 
@@ -437,14 +481,20 @@ async function fetchBioTecNika(feedUrl, report) {
     const items = parseRssItems(xml);
     const jobs = items
       .filter(it => it.title && it.link)
-      .map(it => ({
-        title: it.title,
-        company: "biotecnika:India",
-        location: "India",
-        url: it.link,
-        description: it.description || it.title,
-        postedDate: it.pubDate ? new Date(it.pubDate).toISOString() : "",
-      }));
+      .map(it => {
+        const compMatch = it.title.match(/(?:at|by)\s+([A-Za-z0-9\s&.,-]+?)(?:\s*\||\s*–|\s*-|\s*for|\s*with|\s*in\s+[A-Z]|\s*$)/i);
+        const comp = compMatch ? compMatch[1].trim() : "BioTecNika India";
+        return {
+          title: it.title,
+          company: comp,
+          location: "India",
+          url: it.link,
+          description: it.description || it.title,
+          postedDate: it.pubDate ? new Date(it.pubDate).toISOString() : "",
+          isBioTecNika: true,
+          thinText: true,
+        };
+      });
     report.push(`biotecnika -> ${jobs.length} postings`);
     return jobs;
   } catch (e) {
@@ -453,9 +503,25 @@ async function fetchBioTecNika(feedUrl, report) {
   }
 }
 
+async function fetchBioTecNikaDetail(url) {
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": BROWSER_UA },
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+    const m = html.match(/<article\b[^>]*>([\s\S]*?)<\/article>/i);
+    if (!m) return null;
+    return stripHtml(m[1]).slice(0, 8000);
+  } catch {
+    return null;
+  }
+}
+
 // ---- 2. jobRxiv (International PhD / Academic Positions) ----
 async function fetchJobRxiv(keyword, report) {
-  const url = `https://jobrxiv.org/?feed=job_feed&search_keywords=${encodeURIComponent(keyword)}&posts_per_page=25`;
+  const url = `https://jobrxiv.org/?feed=job_feed&search_keywords=${encodeURIComponent(keyword)}&posts_per_page=30`;
   try {
     const res = await fetch(url, {
       headers: { "User-Agent": BROWSER_UA },
@@ -466,14 +532,19 @@ async function fetchJobRxiv(keyword, report) {
     const items = parseRssItems(xml);
     const jobs = items
       .filter(it => it.title && it.link)
-      .map(it => ({
-        title: it.title,
-        company: `jobrxiv:${keyword}`,
-        location: it.location || "International",
-        url: it.link,
-        description: it.description || it.title,
-        postedDate: it.pubDate ? new Date(it.pubDate).toISOString() : "",
-      }));
+      .map(it => {
+        const atMatch = it.title.match(/(?:at|@)\s+([^,–|-]+)/i);
+        const comp = atMatch ? atMatch[1].trim() : `jobrxiv:${keyword}`;
+        return {
+          title: it.title,
+          company: comp,
+          location: it.location || "International",
+          url: it.link,
+          description: it.description || it.title,
+          postedDate: it.pubDate ? new Date(it.pubDate).toISOString() : "",
+          isPhd: true,
+        };
+      });
     report.push(`jobrxiv:${keyword} -> ${jobs.length} (phd/academic)`);
     return jobs;
   } catch (e) {
@@ -483,8 +554,8 @@ async function fetchJobRxiv(keyword, report) {
 }
 
 // ---- 3. LinkedIn Public Guest API ----
-async function searchLinkedIn(keywordsQuery, location) {
-  const url = `https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=${encodeURIComponent(keywordsQuery)}&location=${encodeURIComponent(location)}`;
+async function searchLinkedIn(keywordsQuery, location, start = 0) {
+  const url = `https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=${encodeURIComponent(keywordsQuery)}&location=${encodeURIComponent(location)}&start=${start}`;
   const res = await fetch(url, {
     headers: {
       "User-Agent": BROWSER_UA,
@@ -715,8 +786,15 @@ async function fetchJSearch(fullQuery, report) {
 function interleaveBySource(jobs) {
   const buckets = {};
   for (const j of jobs) {
-    const key = (j.company || "unknown").toLowerCase();
-    (buckets[key] = buckets[key] || []).push(j);
+    let src = "other";
+    if (j.isBioTecNika) src = "biotecnika";
+    else if (j.isPhd && j.url && j.url.includes("jobrxiv")) src = "jobrxiv";
+    else if (j.isLinkedIn && j.isPhd) src = "linkedin_phd";
+    else if (j.isLinkedIn) src = "linkedin_india";
+    else if (j.company && ["twistbioscience", "manifoldbio", "genscript", "benchling", "modernatx", "octant"].includes(j.company)) src = "ats";
+    else if (j.company && j.company.startsWith("adzuna")) src = "adzuna";
+    else src = (j.company || "unknown").toLowerCase();
+    (buckets[src] = buckets[src] || []).push(j);
   }
   const order = Object.keys(buckets);
   for (let i = order.length - 1; i > 0; i--) {
@@ -742,8 +820,8 @@ function interleaveBySource(jobs) {
 async function analyzeAndSave(job, report) {
   const description = job.description || "";
   const content = `Job Title: ${job.title}\nCompany: ${job.company}\nLocation: ${job.location}\n\n${description}`.slice(0, 12000);
-  if (/\bpost[\s-]?doc(toral)?\b/i.test(`${job.title} ${description}`)) {
-    report.push(`skipped postdoc (found in body): ${job.title.slice(0, 40)}`);
+  if (/\bpost[\s-]?doc(toral)?\b/i.test(job.title) && !/\bphd\b|doctoral/i.test(job.title)) {
+    report.push(`skipped postdoc (in title): ${job.title.slice(0, 40)}`);
     return false;
   }
   const payload = { content, url: job.url, title: job.title, postedDate: job.postedDate || "" };
@@ -798,30 +876,32 @@ async function main() {
     let linkedInIndiaCount = 0;
     for (const location of CONFIG.LINKEDIN_INDIA_LOCATIONS) {
       for (const query of CONFIG.LINKEDIN_INDIA_QUERIES) {
-        let cards = [];
-        try {
-          cards = await searchLinkedIn(query, location);
-        } catch (e) {
-          report.push(`linkedin:india:"${query}" in ${location} -> ERR ${e.message}`);
-          continue;
+        for (const start of [0, 10]) {
+          let cards = [];
+          try {
+            cards = await searchLinkedIn(query, location, start);
+          } catch (e) {
+            report.push(`linkedin:india:"${query}" in ${location} start=${start} -> ERR ${e.message}`);
+            break;
+          }
+          for (const card of cards.slice(0, CONFIG.LINKEDIN_MAX_PER_QUERY)) {
+            const sk = seenKey(card.url);
+            if (await kvGet(sk)) continue;
+            collected.push({
+              id: card.id,
+              title: card.title,
+              company: card.company,
+              location: card.location,
+              url: card.url,
+              description: card.title,
+              postedDate: "",
+              thinText: true,
+              isLinkedIn: true,
+            });
+            linkedInIndiaCount++;
+          }
+          await sleep(150);
         }
-        for (const card of cards.slice(0, CONFIG.LINKEDIN_MAX_PER_QUERY)) {
-          const sk = seenKey(card.url);
-          if (await kvGet(sk)) continue;
-          collected.push({
-            id: card.id,
-            title: card.title,
-            company: card.company,
-            location: card.location,
-            url: card.url,
-            description: card.title,
-            postedDate: "",
-            thinText: true,
-            isLinkedIn: true,
-          });
-          linkedInIndiaCount++;
-        }
-        await sleep(150);
       }
     }
     report.push(`linkedin:india -> ${linkedInIndiaCount} postings harvested`);
@@ -832,30 +912,33 @@ async function main() {
     let linkedInPhdCount = 0;
     for (const location of CONFIG.LINKEDIN_PHD_LOCATIONS) {
       for (const query of CONFIG.LINKEDIN_PHD_QUERIES) {
-        let cards = [];
-        try {
-          cards = await searchLinkedIn(query, location);
-        } catch (e) {
-          report.push(`linkedin:phd:"${query}" in ${location} -> ERR ${e.message}`);
-          continue;
+        for (const start of [0, 10]) {
+          let cards = [];
+          try {
+            cards = await searchLinkedIn(query, location, start);
+          } catch (e) {
+            report.push(`linkedin:phd:"${query}" in ${location} start=${start} -> ERR ${e.message}`);
+            break;
+          }
+          for (const card of cards.slice(0, CONFIG.LINKEDIN_MAX_PER_QUERY)) {
+            const sk = seenKey(card.url);
+            if (await kvGet(sk)) continue;
+            collected.push({
+              id: card.id,
+              title: card.title,
+              company: card.company,
+              location: card.location,
+              url: card.url,
+              description: card.title,
+              postedDate: "",
+              thinText: true,
+              isLinkedIn: true,
+              isPhd: true,
+            });
+            linkedInPhdCount++;
+          }
+          await sleep(150);
         }
-        for (const card of cards.slice(0, CONFIG.LINKEDIN_MAX_PER_QUERY)) {
-          const sk = seenKey(card.url);
-          if (await kvGet(sk)) continue;
-          collected.push({
-            id: card.id,
-            title: card.title,
-            company: card.company,
-            location: card.location,
-            url: card.url,
-            description: card.title,
-            postedDate: "",
-            thinText: true,
-            isLinkedIn: true,
-          });
-          linkedInPhdCount++;
-        }
-        await sleep(150);
       }
     }
     report.push(`linkedin:abroad_phd -> ${linkedInPhdCount} postings harvested`);
@@ -932,7 +1015,7 @@ async function main() {
       if (!thinTextWorthAnalyzing(job.title)) { bump(job.company, "filtered"); continue; }
     } else {
       const blob = `${job.title} ${job.location} ${job.description}`;
-      if (!prefilterPass(blob, 2)) { bump(job.company, "filtered"); continue; }
+      if (!prefilterPass(blob, job.isPhd, 2)) { bump(job.company, "filtered"); continue; }
     }
     passed++;
 
@@ -947,6 +1030,19 @@ async function main() {
       }
     } catch (e) {
       report.push(`KV read error: ${e.message}`);
+    }
+
+    // Just-in-time BioTecNika detail fetch
+    if (job.isBioTecNika && job.url) {
+      try {
+        const detail = await fetchBioTecNikaDetail(job.url);
+        if (detail && detail.length > 200) {
+          job.description = detail;
+          job.thinText = false;
+        }
+      } catch (e) {
+        report.push(`biotecnika detail error: ${e.message}`);
+      }
     }
 
     // Just-in-time LinkedIn detail fetch
