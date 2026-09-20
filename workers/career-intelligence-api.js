@@ -677,7 +677,9 @@ Last character: }
   "strengths": [],
   "gaps": [],
   "reasoning": "",
-  "confidence": 0,
+  "wetLabScore": 0,
+  "computationalScore": 0,
+  "hiringManagerQuery": "",
   "salaryRange": "",
   "companySignal": "",
   "companyNote": "",
@@ -733,6 +735,9 @@ experienceRequired: years of experience needed. Look in requirements, qualificat
 employmentType: must be one of: "Full-time", "Contract", "Internship", "Part-time", "PhD", "Postdoc". Infer from context — PhD positions, research fellowships, internships, and consulting roles are usually clear. Default to "Full-time" for typical industry roles unless stated otherwise. Return "" only if truly ambiguous.
 
 matchScore must be an integer 0–100.
+wetLabScore: integer 0–100 measuring candidate's wet-lab bioprocess / chromatography / mAb alignment.
+computationalScore: integer 0–100 measuring candidate's computational biology / NGS / Python alignment.
+hiringManagerQuery: 2–5 word search query for the hiring manager or PI (e.g. "Head of Downstream", "Protein Science Director", "Principal Investigator").
 recommendation must be exactly one of: "Apply", "Consider", "Reject"
 resumeVersion must be exactly one of: "Protein Science", "Bioinformatics", "PhD Application", "Medical Writing", ""
 companySignal must be exactly one of: "Top Employer", "Good Employer", "Unknown", "Caution"

@@ -154,6 +154,7 @@ const DASHBOARD_HTML = String.raw`<!DOCTYPE html>
 <title>Career Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -196,9 +197,18 @@ body{
 .breadcrumb i{font-size:13px; color:var(--subtle)}
 
 /* ============ LANDING ============ */
-.landing-hero{text-align:center; padding:24px 0 36px}
+.landing-hero{text-align:center; padding:24px 0 28px}
 .landing-hero h2{font-size:26px; font-weight:700; letter-spacing:-0.03em; margin-bottom:8px}
 .landing-hero p{font-size:14px; color:var(--muted); max-width:520px; margin:0 auto}
+.landing-search-wrap{max-width:580px; margin:22px auto 0; position:relative}
+.landing-search-icon{position:absolute; left:16px; top:50%; transform:translateY(-50%); font-size:18px; color:var(--muted)}
+.landing-search-input{
+  width:100%; padding:13px 18px 13px 46px; border-radius:12px; border:1px solid var(--border);
+  background:var(--card); font-size:14px; color:var(--text); box-shadow:0 2px 10px rgba(0,0,0,0.03);
+  font-family:inherit; outline:none; transition:all 0.18s ease;
+}
+.landing-search-input:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(79,70,229,0.12)}
+.landing-search-input::placeholder{color:var(--subtle)}
 
 .section-cards{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:32px}
 .section-card{
@@ -515,10 +525,13 @@ body{
       <button class="drawer-close" onclick="closeResumeModal()"><i class="ti ti-x"></i></button>
     </div>
     <div class="resume-modal-toolbar">
-      <button class="btn-ghost" onclick="copyModalResume()"><i class="ti ti-copy"></i> Copy Resume (Markdown)</button>
-      <button class="btn-ghost" onclick="downloadModalResume()"><i class="ti ti-download"></i> Download .md</button>
-      <button class="btn-ghost" onclick="copyResumePrompt(currentDetailId)"><i class="ti ti-robot"></i> Copy AI Prompt</button>
-      <button class="btn-ghost" onclick="copyCoverLetterPrompt(currentDetailId)"><i class="ti ti-mail"></i> Copy Cover Letter Prompt</button>
+      <button class="btn-ghost" style="background:#7c3aed;color:#ffffff;font-weight:600" onclick="downloadModalDocx()"><i class="ti ti-file-text"></i> Download .docx (Word)</button>
+      <button class="btn-ghost" onclick="downloadCoverLetterDocx()"><i class="ti ti-mail-forward"></i> Cover Letter (.docx)</button>
+      <button class="btn-ghost" onclick="copyColdOutreach(currentDetailId)"><i class="ti ti-brand-linkedin"></i> Copy InMail / Outreach</button>
+      <button class="btn-ghost" onclick="copyModalResume()"><i class="ti ti-copy"></i> Copy Markdown</button>
+      <button class="btn-ghost" onclick="downloadModalResume()"><i class="ti ti-download"></i> .md</button>
+      <button class="btn-ghost" onclick="copyResumePrompt(currentDetailId)"><i class="ti ti-robot"></i> AI Prompt</button>
+      <button class="btn-ghost" onclick="openHiringManagerSearch(currentDetailId)"><i class="ti ti-search"></i> Find Hiring Manager</button>
     </div>
     <div class="resume-modal-content">
       <textarea id="resume-text-area" class="resume-text-view" spellcheck="false"></textarea>
@@ -634,17 +647,30 @@ function renderHome(){
   document.getElementById('view').innerHTML =
     '<div class="landing-hero">' +
       '<h2>Where do you want to look?</h2>' +
-      '<p>' + total + ' roles analyzed across India, international markets, and PhD positions. Pick a track to explore by country.</p>' +
+      '<p>' + total + ' roles analyzed across India, international markets, and PhD positions. Pick a track or search all roles directly.</p>' +
+      '<div class="landing-search-wrap">' +
+        '<i class="ti ti-search landing-search-icon"></i>' +
+        '<input class="landing-search-input" id="home-search" placeholder="Search all ' + total + ' roles (e.g. Biocon, Twist, Downstream, PhD, Bengaluru)..." oninput="handleHomeSearch(this.value)">' +
+      '</div>' +
     '</div>' +
-    '<div class="section-cards">' +
-      sectionCard('india','ti-map-pin-filled','India','Industry & research roles across Bengaluru, Hyderabad and beyond.', india) +
-      sectionCard('international','ti-world','International','US, Canada, UK, Germany, Australia, Korea, UAE & remote.', intl) +
-      sectionCard('phd','ti-school','PhD & Postdoc','Doctoral and postdoc positions worldwide, by country.', phd) +
+    '<div id="home-search-container" style="display:none;margin-bottom:32px;">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">' +
+        '<div style="font-weight:600;font-size:15px;color:var(--text)" id="home-search-count">0 matching roles</div>' +
+        '<button class="btn-ghost" onclick="clearHomeSearch()"><i class="ti ti-x"></i> Clear search</button>' +
+      '</div>' +
+      '<div id="home-search-jobs" class="jobs"></div>' +
     '</div>' +
-    '<div class="stats-bar">' +
-      statBlock('Total analyzed', total, 'all jobs scored', '') +
-      statBlock('Apply-tier', apply, 'high match (70+)', 'apply') +
-      statBlock('Applied', applied, 'tracked in pipeline', '') +
+    '<div id="home-default-sections">' +
+      '<div class="section-cards">' +
+        sectionCard('india','ti-map-pin-filled','India','Industry & research roles across Bengaluru, Hyderabad and beyond.', india) +
+        sectionCard('international','ti-world','International','US, Canada, UK, Germany, Australia, Korea, UAE & remote.', intl) +
+        sectionCard('phd','ti-school','PhD & Postdoc','Doctoral and postdoc positions worldwide, by country.', phd) +
+      '</div>' +
+      '<div class="stats-bar">' +
+        statBlock('Total analyzed', total, 'all jobs scored', '') +
+        statBlock('Apply-tier', apply, 'high match (70+)', 'apply') +
+        statBlock('Applied', applied, 'tracked in pipeline', '') +
+      '</div>' +
     '</div>';
 }
 function sectionCard(s, icon, title, sub, count){
@@ -717,6 +743,48 @@ function currentList(){
   return list;
 }
 
+function renderJobCard(j) {
+  const a = j.analysis || {};
+  const score = a.matchScore || 0;
+  const scoreClass = score >= 70 ? 'apply' : score >= 45 ? 'consider' : 'reject';
+  const status = j.status || 'new';
+  const company = a.company || '';
+  const location = a.location || '';
+  const exp = a.experienceRequired || '';
+  const visa = a.visaSponsorship || '';
+  const visaClass = visa.replace(/\s/g,'');
+  const topStrength = (a.strengths || [])[0];
+  const topGap = (a.gaps || [])[0];
+  const posted = postedLabel(j.postedDate);
+  return '<div class="job" onclick="openDetail(\'' + j.id + '\')">' +
+    '<div class="score-badge score-' + scoreClass + '">' + score + '<span class="score-pct">MATCH</span></div>' +
+    '<div class="job-main">' +
+      '<div class="job-title">' + escapeHtml(a.actualRole || 'Unknown role') + '</div>' +
+      '<div class="job-meta">' +
+        (company ? '<span class="job-company"><i class="ti ti-building"></i>' + escapeHtml(company) + '</span>' : '') +
+        (location ? '<span class="job-meta-item"><i class="ti ti-map-pin"></i>' + escapeHtml(location) + '</span>' : '') +
+        (exp ? '<span class="job-meta-item"><i class="ti ti-briefcase"></i>' + escapeHtml(exp) + '</span>' : '') +
+        (posted ? '<span class="job-meta-item"><i class="ti ti-calendar"></i>' + escapeHtml(posted) + '</span>' : '') +
+        (visa ? '<span class="visa-chip visa-' + visaClass + '"><i class="ti ti-plane"></i>' + escapeHtml(visa) + '</span>' : '') +
+      '</div>' +
+      ((topStrength||topGap) ? '<div class="job-tags">' +
+        (topStrength ? '<span class="mini-tag mini-tag-s">✓ ' + escapeHtml(topStrength) + '</span>' : '') +
+        (topGap ? '<span class="mini-tag mini-tag-g">! ' + escapeHtml(topGap) + '</span>' : '') +
+      '</div>' : '') +
+    '</div>' +
+    '<div class="job-side" onclick="event.stopPropagation()">' +
+      '<select class="status-select status-' + status + '" onchange="updateStatus(\'' + j.id + '\', this.value)" title="Update status">' +
+        '<option value="new"' + (status==='new'?' selected':'') + '>Not Applied</option>' +
+        '<option value="applied"' + (status==='applied'?' selected':'') + '>Applied</option>' +
+        '<option value="interview"' + (status==='interview'?' selected':'') + '>Interview</option>' +
+        '<option value="offered"' + (status==='offered'?' selected':'') + '>Offered</option>' +
+        '<option value="rejected"' + (status==='rejected'?' selected':'') + '>Rejected</option>' +
+      '</select>' +
+      (j.url ? '<button class="icon-btn" title="' + applyTooltip(j) + '" onclick="window.open(\'' + escapeHtml(applyUrl(j)) + '\', \'_blank\')"><i class="ti ti-external-link"></i></button>' : '') +
+    '</div>' +
+  '</div>';
+}
+
 function renderList(){
   const jobs = currentList();
   const host = document.getElementById('jobs');
@@ -725,47 +793,42 @@ function renderList(){
     host.innerHTML = '<div class="empty"><div class="empty-icon"><i class="ti ti-inbox"></i></div><h3>Nothing here yet</h3><p>No roles in this view. Try another country tab or filter — or analyze more jobs.</p></div>';
     return;
   }
-  host.innerHTML = jobs.map(j => {
+  host.innerHTML = jobs.map(j => renderJobCard(j)).join('');
+}
+
+function handleHomeSearch(query) {
+  const q = (query || '').trim().toLowerCase();
+  const searchContainer = document.getElementById('home-search-container');
+  const defaultSections = document.getElementById('home-default-sections');
+  const countEl = document.getElementById('home-search-count');
+  const jobsEl = document.getElementById('home-search-jobs');
+  if (!q) {
+    if (searchContainer) searchContainer.style.display = 'none';
+    if (defaultSections) defaultSections.style.display = 'block';
+    return;
+  }
+  if (defaultSections) defaultSections.style.display = 'none';
+  if (searchContainer) searchContainer.style.display = 'block';
+
+  const matches = allJobs.filter(j => {
     const a = j.analysis || {};
-    const score = a.matchScore || 0;
-    const scoreClass = score >= 70 ? 'apply' : score >= 45 ? 'consider' : 'reject';
-    const status = j.status || 'new';
-    const company = a.company || '';
-    const location = a.location || '';
-    const exp = a.experienceRequired || '';
-    const visa = a.visaSponsorship || '';
-    const visaClass = visa.replace(/\s/g,'');
-    const topStrength = (a.strengths || [])[0];
-    const topGap = (a.gaps || [])[0];
-    const posted = postedLabel(j.postedDate);
-    return '<div class="job" onclick="openDetail(\'' + j.id + '\')">' +
-      '<div class="score-badge score-' + scoreClass + '">' + score + '<span class="score-pct">MATCH</span></div>' +
-      '<div class="job-main">' +
-        '<div class="job-title">' + escapeHtml(a.actualRole || 'Unknown role') + '</div>' +
-        '<div class="job-meta">' +
-          (company ? '<span class="job-company"><i class="ti ti-building"></i>' + escapeHtml(company) + '</span>' : '') +
-          (location ? '<span class="job-meta-item"><i class="ti ti-map-pin"></i>' + escapeHtml(location) + '</span>' : '') +
-          (exp ? '<span class="job-meta-item"><i class="ti ti-briefcase"></i>' + escapeHtml(exp) + '</span>' : '') +
-          (posted ? '<span class="job-meta-item"><i class="ti ti-calendar"></i>' + escapeHtml(posted) + '</span>' : '') +
-          (visa ? '<span class="visa-chip visa-' + visaClass + '"><i class="ti ti-plane"></i>' + escapeHtml(visa) + '</span>' : '') +
-        '</div>' +
-        ((topStrength||topGap) ? '<div class="job-tags">' +
-          (topStrength ? '<span class="mini-tag mini-tag-s">✓ ' + escapeHtml(topStrength) + '</span>' : '') +
-          (topGap ? '<span class="mini-tag mini-tag-g">! ' + escapeHtml(topGap) + '</span>' : '') +
-        '</div>' : '') +
-      '</div>' +
-      '<div class="job-side" onclick="event.stopPropagation()">' +
-        '<select class="status-select status-' + status + '" onchange="updateStatus(\'' + j.id + '\', this.value)" title="Update status">' +
-          '<option value="new"' + (status==='new'?' selected':'') + '>Not Applied</option>' +
-          '<option value="applied"' + (status==='applied'?' selected':'') + '>Applied</option>' +
-          '<option value="interview"' + (status==='interview'?' selected':'') + '>Interview</option>' +
-          '<option value="offered"' + (status==='offered'?' selected':'') + '>Offered</option>' +
-          '<option value="rejected"' + (status==='rejected'?' selected':'') + '>Rejected</option>' +
-        '</select>' +
-        (j.url ? '<button class="icon-btn" title="' + applyTooltip(j) + '" onclick="window.open(\'' + escapeHtml(applyUrl(j)) + '\', \'_blank\')"><i class="ti ti-external-link"></i></button>' : '') +
-      '</div>' +
-    '</div>';
-  }).join('');
+    return ((a.actualRole||'') + ' ' + (a.company||'') + ' ' + (a.location||'') + ' ' + (a.jobCategory||'') + ' ' + (a.strengths||[]).join(' ') + ' ' + (j.pageTitle||'')).toLowerCase().includes(q);
+  });
+
+  matches.sort((a,b) => (b.analysis?.matchScore||0) - (a.analysis?.matchScore||0));
+
+  if (countEl) countEl.textContent = matches.length + ' matching role' + (matches.length === 1 ? '' : 's');
+  if (!matches.length) {
+    if (jobsEl) jobsEl.innerHTML = '<div class="empty"><div class="empty-icon"><i class="ti ti-search"></i></div><h3>No matching roles found</h3><p>Try searching for a different company (e.g. Biocon), technique (e.g. AKTA), or role.</p></div>';
+  } else {
+    if (jobsEl) jobsEl.innerHTML = matches.map(j => renderJobCard(j)).join('');
+  }
+}
+
+function clearHomeSearch() {
+  const input = document.getElementById('home-search');
+  if (input) input.value = '';
+  handleHomeSearch('');
 }
 
 function statBlock(label, value, sub, variant) {
@@ -803,6 +866,8 @@ function openDetail(id) {
         factCell('Experience', a.experienceRequired, 'ti-briefcase') +
         factCell('Posted', postedLabel(job.postedDate).replace(/^Posted /,''), 'ti-calendar') +
         factCell('Visa / sponsorship', a.visaSponsorship, 'ti-plane') +
+        (a.wetLabScore ? factCell('Bench / Bioprocess Match', a.wetLabScore + '%', 'ti-flask') : '') +
+        (a.computationalScore ? factCell('In Silico / NGS Match', a.computationalScore + '%', 'ti-dna') : '') +
       '</div>' +
       tailorCard(job) +
       (a.companySignal ? '<div class="signal-row"><div class="signal-row-icon"><i class="ti ti-shield-check"></i></div><div class="signal-row-body">' +
@@ -952,24 +1017,27 @@ function applyTooltip(job) {
 
 function tailorCard(job) {
   const isDoc = isPhd(job);
-  const promptLabel = isDoc ? 'Copy PhD Motivation Prompt' : 'Copy Cover Letter Prompt';
   return '<div class="tailor-card">' +
     '<div class="tailor-head">' +
       '<div class="tailor-icon"><i class="ti ti-sparkles"></i></div>' +
       '<div>' +
-        '<div class="tailor-title">Tailor Application & Resume</div>' +
-        '<div class="tailor-sub">' + (isDoc ? 'Generate an academic CV draft or AI prompts tuned for doctoral committee evaluation.' : '1-click ATS resume customized for this role, plus turnkey AI prompts with candidate profile pre-filled.') + '</div>' +
+        '<div class="tailor-title">Tailor Application Kit & Resume Studio</div>' +
+        '<div class="tailor-sub">' + (isDoc ? '1-click academic Word CV, cover letter, PI networking message, and AI prompts.' : '1-click tailored Word (.docx) resume, targeted cover letter, hiring manager InMail, and AI prompt.') + '</div>' +
       '</div>' +
     '</div>' +
     '<div class="tailor-btns">' +
-      '<button class="btn-tailor btn-tailor-primary" onclick="showTailoredResume(\'' + job.id + '\')"><i class="ti ti-file-text"></i> View Tailored Resume Draft</button>' +
-      '<button class="btn-tailor btn-tailor-secondary" onclick="copyResumePrompt(\'' + job.id + '\')"><i class="ti ti-robot"></i> Copy AI Resume Prompt</button>' +
-      '<button class="btn-tailor btn-tailor-secondary" onclick="copyCoverLetterPrompt(\'' + job.id + '\')"><i class="ti ti-mail"></i> ' + promptLabel + '</button>' +
+      '<button class="btn-tailor btn-tailor-primary" onclick="downloadModalDocx(\'' + job.id + '\')"><i class="ti ti-download"></i> Download Word (.docx)</button>' +
+      '<button class="btn-tailor btn-tailor-secondary" onclick="showTailoredResume(\'' + job.id + '\')"><i class="ti ti-file-text"></i> View Draft</button>' +
+      '<button class="btn-tailor btn-tailor-secondary" onclick="downloadCoverLetterDocx(\'' + job.id + '\')"><i class="ti ti-mail-forward"></i> Cover Letter (.docx)</button>' +
+      '<button class="btn-tailor btn-tailor-secondary" onclick="copyColdOutreach(\'' + job.id + '\')"><i class="ti ti-brand-linkedin"></i> Copy InMail</button>' +
+      '<button class="btn-tailor btn-tailor-secondary" onclick="openHiringManagerSearch(\'' + job.id + '\')"><i class="ti ti-search"></i> ' + (isDoc ? 'Find Lab PI' : 'Find Hiring Manager') + '</button>' +
+      '<button class="btn-tailor btn-tailor-secondary" onclick="copyResumePrompt(\'' + job.id + '\')"><i class="ti ti-robot"></i> AI Prompt</button>' +
     '</div>' +
   '</div>';
 }
 
 function showTailoredResume(id) {
+  currentDetailId = id;
   const job = allJobs.find(j => j.id === id);
   if (!job) return;
   const a = job.analysis || {};
@@ -997,6 +1065,383 @@ function downloadModalResume() {
   const filename = 'Sudakshina_Deb_' + cleanRole + '.md';
   const text = document.getElementById('resume-text-area').value;
   downloadMarkdown(filename, text);
+}
+
+function saveBlobFile(filename, blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+async function downloadModalDocx(jobId) {
+  const id = jobId || currentDetailId;
+  const job = allJobs.find(j => j.id === id);
+  if (!job) {
+    showToast('Please select a job first.');
+    return;
+  }
+  const a = job.analysis || {};
+  const isDoc = isPhd(job);
+  const company = a.company || 'Biotech';
+  const role = a.actualRole || 'Scientist';
+  const cleanComp = company.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const cleanRole = role.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const filename = 'Sudakshina_Deb_Resume_' + cleanComp + '_' + cleanRole + '.docx';
+
+  if (typeof window.docx === 'undefined') {
+    showToast('Preparing document... downloading Markdown version');
+    downloadModalResume();
+    return;
+  }
+
+  showToast('Generating tailored Word resume for ' + company + '…');
+
+  try {
+    const { Document, Packer, Paragraph, TextRun, AlignmentType, BorderStyle } = window.docx;
+    const children = [];
+
+    // Header Name
+    children.push(new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 60 },
+      children: [
+        new TextRun({ text: "SUDAKSHINA DEB", bold: true, size: 34, font: "Calibri", color: "1E3A8A" })
+      ]
+    }));
+
+    // Headline
+    const subTitle = isDoc
+      ? "Doctoral Researcher & Scientist | Molecular Biology & Protein Sciences"
+      : (/bioinform|computational|ngs|genom/i.test(role + ' ' + (a.jobCategory||''))
+          ? "Bioinformatics & Downstream Protein Scientist"
+          : "Senior Scientist — Downstream Protein Sciences & Bioprocess Development");
+
+    children.push(new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 100 },
+      children: [
+        new TextRun({ text: subTitle, bold: true, size: 22, font: "Calibri", color: "374151" })
+      ]
+    }));
+
+    // Contact
+    children.push(new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 180 },
+      children: [
+        new TextRun({ text: "Bengaluru, India  |  +91 97486 44342  |  sudakshinadeb100@gmail.com  |  linkedin.com/in/sudakshina-deb-041499120", size: 19, font: "Calibri", color: "4B5563" })
+      ]
+    }));
+
+    function addSection(title) {
+      children.push(new Paragraph({
+        spacing: { before: 200, after: 80 },
+        border: {
+          bottom: { color: "1E3A8A", space: 3, style: BorderStyle.SINGLE, size: 12 }
+        },
+        children: [
+          new TextRun({ text: title.toUpperCase(), bold: true, size: 21, font: "Calibri", color: "1E3A8A" })
+        ]
+      }));
+    }
+
+    function addBullet(boldPrefix, text) {
+      children.push(new Paragraph({
+        bullet: { level: 0 },
+        spacing: { before: 30, after: 40 },
+        children: [
+          new TextRun({ text: boldPrefix ? boldPrefix + " " : "", bold: !!boldPrefix, size: 20, font: "Calibri", color: "1F2937" }),
+          new TextRun({ text: text, size: 20, font: "Calibri", color: "374151" })
+        ]
+      }));
+    }
+
+    // Professional Summary
+    addSection("Professional Summary");
+    const summaryText = isDoc
+      ? ('Accomplished life sciences researcher with 3.8 years of industrial research experience at Syngene International Ltd. (Biocon Group) and an M.Tech in Biotechnology & Biochemical Engineering from IIT Kharagpur (CGPA 8.78). Hands-on expertise in recombinant protein expression, AKTA chromatography purification (affinity, IEX, SEC, HIC), biophysical characterization (SEC-HPLC, SDS-PAGE), and in silico bioinformatics (Python, R, NGS analysis). Dedicated to applying advanced bioprocess and structural biology competencies to doctoral research in ' + role + ' at ' + company + '.')
+      : 'Accomplished Senior Scientist with 3.8 years of biopharmaceutical industry experience at Syngene International Ltd. specializing in downstream protein purification, bioprocess development, and analytical characterization for monoclonal antibodies (mAbs), bispecifics, and recombinant therapeutics. Expert in AKTA Avant/Pure systems, Tangential Flow Filtration (TFF), and SEC-HPLC purity profiling under ALCOA++ GDP/GLP compliance. Recipient of Syngene SPOT Award for rapid troubleshooting and high-recovery delivery. Holds M.Tech in Biotechnology from IIT Kharagpur with computational skills in Python and R.';
+
+    children.push(new Paragraph({
+      spacing: { after: 120 },
+      children: [
+        new TextRun({ text: summaryText, size: 20, font: "Calibri", color: "374151" })
+      ]
+    }));
+
+    // Core Competencies
+    addSection("Core Technical Competencies");
+    addBullet("Preparative Chromatography & Downstream:", "AKTA Pure, AKTA Avant, UNICORN software; Affinity (Protein A/G, Ni-NTA His-tag), Ion Exchange (CEX, AEX), Size Exclusion (SEC), Hydrophobic Interaction (HIC).");
+    addBullet("Bioprocess & Membrane Technologies:", "Tangential Flow Filtration (TFF, Pellicon cassettes), Centricon ultrafiltration/diafiltration (UF/DF), dialysis, buffer formulation, scale-down modeling.");
+    addBullet("Analytical Characterization & QC:", "SEC-HPLC (monomer purity & aggregate profiling), SDS-PAGE (reducing/non-reducing), Western Blotting, Endosafe PTS (kinetic LAL endotoxin assays), UV-Vis spectrometry.");
+    addBullet("Biotherapeutic Modalities:", "Monoclonal antibodies (mAbs), Bispecific antibodies (bsAbs), Fc-fusion proteins, His-tagged antigens, therapeutic enzymes.");
+    addBullet("Computational Biology & Data Science:", "Python (Biopython, pandas, NumPy), R, Linux/Bash, NGS workflows, QIIME2 amplicon pipeline, AlphaFold2 structural modeling, PyMOL.");
+    addBullet("Compliance & Documentation:", "ALCOA++ data integrity standards, Standard Operating Procedures (SOPs), Batch Manufacturing Records (BMRs), GLP/GMP laboratory environment.");
+
+    // Professional Experience
+    addSection("Professional Experience");
+    children.push(new Paragraph({
+      spacing: { before: 80, after: 30 },
+      children: [
+        new TextRun({ text: "SYNGENE INTERNATIONAL LIMITED (BIOCON GROUP)", bold: true, size: 21, font: "Calibri", color: "111827" }),
+        new TextRun({ text: "  |  Bengaluru, India", size: 19, font: "Calibri", color: "6B7280" })
+      ]
+    }));
+    children.push(new Paragraph({
+      spacing: { after: 60 },
+      children: [
+        new TextRun({ text: "Research Associate II — Downstream Protein Sciences & Discovery Biology", italics: true, bold: true, size: 20, font: "Calibri", color: "374151" }),
+        new TextRun({ text: "  |  Sep 2022 – Present", size: 19, font: "Calibri", color: "6B7280" })
+      ]
+    }));
+
+    addBullet("Biotherapeutic Purification Workflows:", "Spearheaded downstream purification and recovery optimization for 30+ recombinant therapeutic projects, including mAbs, bispecific antibodies, and complex fusion constructs using AKTA systems.");
+    addBullet("Chromatography Method Development:", "Developed, scaled, and standardized multi-step chromatographic workflows across Protein A, Ni-NTA, CEX, AEX, and SEC, consistently achieving >95% monomer purity and >85% yield recovery.");
+    addBullet("UF/DF & TFF Parameter Optimization:", "Established Tangential Flow Filtration (TFF) and ultrafiltration/diafiltration parameters, cutting cycle time by 25% while sustaining high product stability.");
+    addBullet("Analytical Release Testing:", "Conducted routine release and purity profiling using SEC-HPLC, SDS-PAGE (reducing/non-reducing), Western blot validation, and kinetic LAL endotoxin quantification.");
+    addBullet("ALCOA++ Regulatory Adherence:", "Championed data integrity compliance; authored Standard Operating Procedures (SOPs) and comprehensive Batch Manufacturing Records (BMRs).");
+    addBullet("Syngene SPOT Award:", "Awarded SPOT Award (Feb 2023) for outstanding technical troubleshooting and on-time delivery of critical client biotherapeutic batches under tight deadlines.");
+
+    // Education
+    addSection("Education & Credentials");
+    children.push(new Paragraph({
+      spacing: { before: 80, after: 20 },
+      children: [
+        new TextRun({ text: "INDIAN INSTITUTE OF TECHNOLOGY (IIT) KHARAGPUR", bold: true, size: 21, font: "Calibri", color: "111827" }),
+        new TextRun({ text: "  |  2020 – 2022", size: 19, font: "Calibri", color: "6B7280" })
+      ]
+    }));
+    children.push(new Paragraph({
+      spacing: { after: 50 },
+      children: [
+        new TextRun({ text: "Master of Technology (M.Tech) in Biotechnology & Biochemical Engineering", italics: true, size: 20, font: "Calibri", color: "374151" }),
+        new TextRun({ text: "  |  CGPA: 8.78 / 10.0", bold: true, size: 20, font: "Calibri", color: "1E3A8A" })
+      ]
+    }));
+
+    children.push(new Paragraph({
+      spacing: { before: 60, after: 20 },
+      children: [
+        new TextRun({ text: "HERITAGE INSTITUTE OF TECHNOLOGY", bold: true, size: 21, font: "Calibri", color: "111827" }),
+        new TextRun({ text: "  |  2016 – 2020", size: 19, font: "Calibri", color: "6B7280" })
+      ]
+    }));
+    children.push(new Paragraph({
+      spacing: { after: 80 },
+      children: [
+        new TextRun({ text: "Bachelor of Technology (B.Tech) in Biotechnology", italics: true, size: 20, font: "Calibri", color: "374151" }),
+        new TextRun({ text: "  |  DGPA: 8.84 / 10.0", bold: true, size: 20, font: "Calibri", color: "1E3A8A" })
+      ]
+    }));
+
+    // Honors
+    addSection("Honors & Key Achievements");
+    addBullet("Syngene SPOT Award (2023):", "Conferred for exemplary commitment and high-efficiency protein purification delivery.");
+    addBullet("Graduate Aptitude Test in Engineering (GATE):", "Qualified in Biotechnology with top percentile nationwide.");
+    addBullet("Academic Excellence Honors:", "Graduated in top 5% of class at IIT Kharagpur.");
+
+    const doc = new Document({
+      sections: [{
+        properties: {
+          page: {
+            margin: { top: 720, bottom: 720, left: 864, right: 864 }
+          }
+        },
+        children
+      }]
+    });
+
+    const blob = await Packer.toBlob(doc);
+    saveBlobFile(filename, blob);
+    showToast('Downloaded Word Resume: ' + filename);
+  } catch (err) {
+    console.error('Docx generation error:', err);
+    showToast('Docx error; downloading Markdown version...');
+    downloadModalResume();
+  }
+}
+
+async function downloadCoverLetterDocx(jobId) {
+  const id = jobId || currentDetailId;
+  const job = allJobs.find(j => j.id === id);
+  if (!job) {
+    showToast('Please select a job first.');
+    return;
+  }
+  const a = job.analysis || {};
+  const isDoc = isPhd(job);
+  const company = a.company || 'Target Organization';
+  const role = a.actualRole || 'Scientist';
+  const loc = a.location || '';
+  const cleanComp = company.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const filename = 'Sudakshina_Deb_Cover_Letter_' + cleanComp + '.docx';
+
+  if (typeof window.docx === 'undefined') {
+    showToast('Word generator loading... Copying Cover Letter Prompt');
+    copyCoverLetterPrompt(id);
+    return;
+  }
+
+  showToast('Generating Cover Letter for ' + company + '…');
+
+  try {
+    const { Document, Packer, Paragraph, TextRun, AlignmentType } = window.docx;
+    const children = [];
+
+    // Header Name
+    children.push(new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 50 },
+      children: [
+        new TextRun({ text: "SUDAKSHINA DEB", bold: true, size: 32, font: "Calibri", color: "1E3A8A" })
+      ]
+    }));
+    children.push(new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 160 },
+      children: [
+        new TextRun({ text: "Bengaluru, India  |  +91 97486 44342  |  sudakshinadeb100@gmail.com  |  linkedin.com/in/sudakshina-deb-041499120", size: 19, font: "Calibri", color: "4B5563" })
+      ]
+    }));
+
+    const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    children.push(new Paragraph({
+      spacing: { before: 80, after: 100 },
+      children: [new TextRun({ text: today, size: 21, font: "Calibri" })]
+    }));
+
+    children.push(new Paragraph({
+      spacing: { after: 30 },
+      children: [new TextRun({ text: "To:", bold: true, size: 21, font: "Calibri" })]
+    }));
+    children.push(new Paragraph({
+      spacing: { after: 30 },
+      children: [new TextRun({ text: isDoc ? "Doctoral Selection Committee / Principal Investigator" : "Hiring Manager & Biologics Selection Team", size: 21, font: "Calibri" })]
+    }));
+    children.push(new Paragraph({
+      spacing: { after: 30 },
+      children: [new TextRun({ text: company, bold: true, size: 21, font: "Calibri" })]
+    }));
+    if (loc) {
+      children.push(new Paragraph({
+        spacing: { after: 120 },
+        children: [new TextRun({ text: loc, size: 21, font: "Calibri", color: "6B7280" })]
+      }));
+    }
+
+    children.push(new Paragraph({
+      spacing: { before: 80, after: 140 },
+      children: [
+        new TextRun({ text: "Subject: Application for " + role + " (Sudakshina Deb - M.Tech IIT Kharagpur)", bold: true, size: 21, font: "Calibri", color: "1E3A8A" })
+      ]
+    }));
+
+    const p1 = isDoc
+      ? ('Dear Professor / Selection Committee,\n\nI am writing to formally submit my application for the ' + role + ' position within ' + company + '. With an M.Tech in Biotechnology & Biochemical Engineering from IIT Kharagpur (CGPA: 8.78) and 3.8 years of industrial bioprocess research at Syngene International Ltd. (Biocon Group), I have developed a rigorous foundation in recombinant protein expression, multi-modal chromatographic purification (AKTA systems), and bioanalytical characterization. I am eager to dedicate my technical rigor and research passion to your group\'s scientific objectives.')
+      : ('Dear Hiring Team,\n\nI am writing to express my strong interest in the ' + role + ' opportunity at ' + company + '. Having spent the past 3.8 years as a Research Associate II in Downstream Protein Sciences at Syngene International Ltd. (Biocon Group) alongside completing my M.Tech in Biotechnology from IIT Kharagpur (CGPA: 8.78), I have accumulated comprehensive hands-on expertise in developing, scaling, and validating downstream purification protocols for complex biotherapeutics.');
+
+    const p2 = 'Throughout my tenure at Syngene, I have spearheaded the purification of over 30+ recombinant therapeutic projects—including monoclonal antibodies (mAbs), bispecifics, and fusion constructs—using AKTA Pure and Avant platforms. My day-to-day focus encompasses developing multi-step chromatography strategies (Affinity, CEX, AEX, HIC, SEC), establishing Tangential Flow Filtration (TFF) parameters, and executing release characterization via SEC-HPLC and SDS-PAGE under ALCOA++ compliance. Recognizing my ability to troubleshoot challenging aggregation barriers and deliver high-yield batches under urgent timelines, Syngene conferred upon me the SPOT Award.';
+
+    const p3 = 'Beyond wet-lab execution, I bring a multidisciplinary edge with proficiency in Python, R, and NGS pipelines, enabling data automation and in silico insights. I admire ' + company + '\'s dedication to innovation in biotherapeutics and scientific discovery, and I am confident that my proven bioprocess expertise, analytical rigor, and collaborative spirit will allow me to make immediate contributions to your team.';
+
+    const p4 = 'Thank you for your time and consideration. I welcome the opportunity to discuss my qualifications and how my background aligns with ' + company + '\'s goals in greater detail.';
+
+    [p1, p2, p3, p4].forEach(text => {
+      children.push(new Paragraph({
+        spacing: { before: 60, after: 120 },
+        children: [new TextRun({ text, size: 21, font: "Calibri", color: "1F2937" })]
+      }));
+    });
+
+    children.push(new Paragraph({
+      spacing: { before: 100, after: 40 },
+      children: [new TextRun({ text: "Sincerely,", size: 21, font: "Calibri" })]
+    }));
+    children.push(new Paragraph({
+      spacing: { after: 30 },
+      children: [new TextRun({ text: "Sudakshina Deb", bold: true, size: 22, font: "Calibri", color: "1E3A8A" })]
+    }));
+    children.push(new Paragraph({
+      spacing: { after: 30 },
+      children: [new TextRun({ text: "+91 97486 44342  |  sudakshinadeb100@gmail.com", size: 19, font: "Calibri", color: "6B7280" })]
+    }));
+
+    const doc = new Document({
+      sections: [{
+        properties: {
+          page: {
+            margin: { top: 1080, bottom: 1080, left: 1080, right: 1080 }
+          }
+        },
+        children
+      }]
+    });
+
+    const blob = await Packer.toBlob(doc);
+    saveBlobFile(filename, blob);
+    showToast('Downloaded Word Cover Letter: ' + filename);
+  } catch (err) {
+    console.error('Cover letter generation error:', err);
+    showToast('Cover letter error; copying prompt instead.');
+    copyCoverLetterPrompt(id);
+  }
+}
+
+function copyColdOutreach(jobId) {
+  const id = jobId || currentDetailId;
+  const job = allJobs.find(j => j.id === id);
+  if (!job) {
+    showToast('Please select a job first.');
+    return;
+  }
+  const a = job.analysis || {};
+  const company = a.company || 'your organization';
+  const role = a.actualRole || 'the open role';
+  const isDoc = isPhd(job);
+
+  let message = '';
+  if (isDoc) {
+    message = 'Subject: Inquiry regarding Doctoral / Research Opportunity at ' + company + ' - Sudakshina Deb (M.Tech IIT Kharagpur)\n\n' +
+      'Dear Professor / Research Team,\n\n' +
+      'I am writing to express my strong interest in doctoral / research opportunities within your group at ' + company + ', particularly concerning ' + role + '.\n\n' +
+      'I hold an M.Tech in Biotechnology & Biochemical Engineering from IIT Kharagpur (CGPA: 8.78) and have 3.8 years of industrial research experience at Syngene International (Biocon Group), specializing in downstream protein purification (AKTA systems), biophysical characterization, and molecular analysis. My background combines rigorous wet-lab protein chemistry with computational and NGS data analysis.\n\n' +
+      'I would be eager to discuss how my research foundation and experimental rigor could contribute to your laboratory\'s upcoming projects. My CV and research summary are available for your review.\n\n' +
+      'Thank you for your time and consideration.\n\n' +
+      'Best regards,\nSudakshina Deb\nBengaluru, India | +91 97486 44342 | sudakshinadeb100@gmail.com\nlinkedin.com/in/sudakshina-deb-041499120';
+  } else {
+    message = 'Subject: Inquiry regarding ' + role + ' - Sudakshina Deb (M.Tech IIT Kharagpur | 3.8 yrs Downstream Bioprocess)\n\n' +
+      'Dear ' + company + ' Hiring Team,\n\n' +
+      'I noticed the open ' + role + ' position at ' + company + ' and wanted to reach out directly. With 3.8 years of downstream bioprocess development experience at Syngene International (Biocon Group) and an M.Tech from IIT Kharagpur (CGPA 8.78), my background aligns directly with your technical requirements.\n\n' +
+      'At Syngene, I specialize in preparative protein purification (AKTA Avant/Pure, IEX, HIC, Affinity, SEC) and analytical characterization (SEC-HPLC, SDS-PAGE) for monoclonal and bispecific antibodies, earning a SPOT Award for delivering critical biotherapeutic milestones under compressed timelines.\n\n' +
+      'I would welcome the opportunity to connect for a brief 10-minute conversation to discuss how my bioprocess background can support ' + company + '\'s pipeline.\n\n' +
+      'Sincerely,\nSudakshina Deb\n+91 97486 44342 | sudakshinadeb100@gmail.com\nlinkedin.com/in/sudakshina-deb-041499120';
+  }
+
+  copyToClipboard(message, 'Copied Cold InMail / Outreach message to clipboard!');
+}
+
+function openHiringManagerSearch(jobId) {
+  const id = jobId || currentDetailId;
+  const job = allJobs.find(j => j.id === id);
+  if (!job) return;
+  const a = job.analysis || {};
+  const company = a.company || '';
+  const isDoc = isPhd(job);
+
+  let searchUrl = '';
+  if (isDoc) {
+    const q = company + ' ' + (a.actualRole || 'protein biology') + ' Professor Principal Investigator';
+    searchUrl = 'https://scholar.google.com/scholar?q=' + encodeURIComponent(q);
+  } else {
+    const q = 'site:linkedin.com/in "' + company + '" ("Head of Downstream" OR "Discovery Biology" OR "Director Biologics" OR "Bioprocess" OR "Talent Acquisition")';
+    searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(q);
+  }
+  window.open(searchUrl, '_blank');
 }
 
 function copyResumePrompt(id) {
