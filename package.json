@@ -8,6 +8,8 @@
     "node": ">=20"
   },
   "scripts": {
-    "discover": "node discovery.mjs"
+    "start": "node discovery.mjs",
+    "discover": "node discovery.mjs",
+    "test": "node --check discovery.mjs"
   }
 }

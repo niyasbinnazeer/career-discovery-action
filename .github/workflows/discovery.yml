@@ -1,9 +1,24 @@
 name: Career Discovery
 
-"on":
+on:
   schedule:
-    - cron: "0 */2 * * *"
+    # 3 times daily: 02:00, 10:00, 18:00 UTC (07:30, 15:30, 23:30 IST)
+    # Balanced cadence to discover fresh jobs across India, Asian, and global timezones
+    - cron: "0 2,10,18 * * *"
+  push:
+    branches:
+      - main
   workflow_dispatch:
+    inputs:
+      clear_kv:
+        description: 'Clear all existing jobs from KV before running'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: career-discovery
+  cancel-in-progress: false
 
 jobs:
   discover:
@@ -15,7 +30,43 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
+      - name: Clear KV jobs (Reset on push or clear_kv)
+        if: github.event_name == 'push' || inputs.clear_kv == true
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_KV_NAMESPACE_ID: ${{ secrets.CF_KV_NAMESPACE_ID }}
+        run: |
+          node -e '
+            const base = `https://api.cloudflare.com/client/v4/accounts/${process.env.CF_ACCOUNT_ID}/storage/kv/namespaces/${process.env.CF_KV_NAMESPACE_ID}`;
+            const headers = { "Authorization": `Bearer ${process.env.CF_API_TOKEN}`, "Content-Type": "application/json" };
+            async function clear() {
+              console.log("[reset] Clearing existing jobs from Cloudflare KV...");
+              let cursor = "", deleted = 0;
+              do {
+                const url = `${base}/keys?limit=1000` + (cursor ? `&cursor=${encodeURIComponent(cursor)}` : "");
+                const res = await fetch(url, { headers });
+                if (!res.ok) { console.error("[reset] Failed to list KV keys:", res.status); break; }
+                const data = await res.json();
+                const keys = (data.result || [])
+                  .map(k => k.name)
+                  .filter(k => k.startsWith("jobs:") || k.startsWith("seen:") || k.startsWith("fp:") || k.startsWith("discovery:"));
+                if (!keys.length) break;
+                const delRes = await fetch(`${base}/bulk`, { method: "DELETE", headers, body: JSON.stringify(keys) });
+                if (delRes.ok) {
+                  deleted += keys.length;
+                  console.log(`[reset] Deleted ${deleted} keys so far...`);
+                } else {
+                  console.error("[reset] Bulk delete failed:", delRes.status);
+                  break;
+                }
+                cursor = data.result_info?.cursor || "";
+              } while (cursor);
+              console.log(`[reset] Complete: Cleared ${deleted} total keys from Cloudflare KV.`);
+            }
+            clear().catch(e => console.error("[reset] Error:", e));
+          '
       - name: Run discovery
         env:
           CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
@@ -24,4 +75,6 @@ jobs:
           CAREER_ANALYZER_URL: ${{ secrets.CAREER_ANALYZER_URL }}
           ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
           ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+          JOOBLE_API_KEY: ${{ secrets.JOOBLE_API_KEY }}
+          RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
         run: node discovery.mjs
