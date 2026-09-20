@@ -839,15 +839,15 @@ async function analyzeAndSave(job, report) {
       let bodySnippet = "";
       try { bodySnippet = (await res.text()).slice(0, 200); } catch {}
       const transient = res.status === 502 || res.status === 503 || res.status === 429
-        || /503|high demand|RESOURCE_EXHAUSTED|overload/i.test(bodySnippet);
+        || /503|high demand|RESOURCE_EXHAUSTED|overload|429/i.test(bodySnippet);
       if (transient && attempt < MAX_TRIES) {
-        await sleep(attempt * 1800);
+        await sleep(attempt * 2500);
         continue;
       }
       report.push(`analyze FAIL ${res.status} (try ${attempt}) :: ${bodySnippet.slice(0, 120)} :: ${job.title.slice(0, 28)}`);
       return false;
     } catch (e) {
-      if (attempt < MAX_TRIES) { await sleep(attempt * 1800); continue; }
+      if (attempt < MAX_TRIES) { await sleep(attempt * 2500); continue; }
       report.push(`analyze ERR ${e.message}: ${job.title.slice(0, 40)}`);
       return false;
     }
@@ -1096,6 +1096,9 @@ async function main() {
       } catch (e) {
         report.push(`KV write error: ${e.message}`);
       }
+      await sleep(1200); // polite pacing between LLM evaluations
+    } else {
+      await sleep(2000); // back off slightly on failure before next job
     }
   }
 

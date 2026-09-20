@@ -6,8 +6,15 @@
 // Optional env:    HAIKU_MODEL  (defaults to "claude-haiku-4-5-20251001")
 // Binding:         JOBS_KV (career_jobs namespace)
 
-const DEFAULT_GEMINI_MODEL = "gemini-3.5-flash";
+const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash-lite";
 const DEFAULT_HAIKU_MODEL = "claude-haiku-4-5-20251001";
+const GEMINI_CASCADE = [
+  "gemini-2.5-flash-lite",
+  "gemini-1.5-flash",
+  "gemini-2.0-flash",
+  "gemini-3.1-flash-lite",
+  "gemini-2.5-flash",
+];
 
 // Shared: pull a clean JSON object out of a model's text response.
 function extractAnalysis(rawText) {
@@ -30,6 +37,14 @@ async function callGemini(env, model, SYSTEM_PROMPT, pageContent) {
   const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
   let res;
   try {
+    const generationConfig = {
+      maxOutputTokens: 8000,
+      response_mime_type: "application/json",
+    };
+    // Minimal thinking only for models that support it; flash-lite doesn't need thinking
+    if (!/lite/i.test(model)) {
+      generationConfig.thinkingConfig = { thinkingLevel: "minimal" };
+    }
     res = await fetch(geminiUrl, {
       method: "POST",
       headers: {
@@ -39,13 +54,9 @@ async function callGemini(env, model, SYSTEM_PROMPT, pageContent) {
       body: JSON.stringify({
         system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
         contents: [{ role: "user", parts: [{ text: pageContent }] }],
-        generationConfig: {
-          maxOutputTokens: 24000,
-          response_mime_type: "application/json",
-          thinkingConfig: { thinkingLevel: "medium" },
-        },
+        generationConfig,
       }),
-      signal: AbortSignal.timeout(35000),
+      signal: AbortSignal.timeout(30000),
     });
   } catch (e) {
     return { ok: false, unavailable: true, status: 0, detail: `network: ${e.message}` };
@@ -730,26 +741,55 @@ actionChecklist must have 3–5 items.
 `;
 
       let analysis;
-      let modelUsed = geminiModel;
-      const g = await callGemini(env, geminiModel, SYSTEM_PROMPT, pageContent);
-      if (g.ok) {
-        analysis = g.analysis;
-      } else if (g.unavailable) {
-        const h = await callHaiku(env, haikuModel, SYSTEM_PROMPT, pageContent);
-        if (h.ok) {
-          analysis = h.analysis;
-          modelUsed = haikuModel + " (fallback)";
+      let modelUsed;
+      let lastGeminiErr;
+
+      const modelsToTry = env.GEMINI_MODEL
+        ? [env.GEMINI_MODEL, ...GEMINI_CASCADE.filter((m) => m !== env.GEMINI_MODEL)]
+        : GEMINI_CASCADE;
+
+      for (const model of modelsToTry) {
+        const g = await callGemini(env, model, SYSTEM_PROMPT, pageContent);
+        if (g.ok) {
+          analysis = g.analysis;
+          modelUsed = model;
+          break;
+        }
+        lastGeminiErr = g;
+        // If quota exhausted (429), model overloaded (503), or invalid model (404), cascade to next model
+        if (g.unavailable || g.status === 404) {
+          continue;
+        } else {
+          break;
+        }
+      }
+
+      if (!analysis) {
+        // Fall back to Haiku if Gemini cascade exhausted and Anthropic key configured
+        if (env.ANTHROPIC_API_KEY) {
+          const h = await callHaiku(env, haikuModel, SYSTEM_PROMPT, pageContent);
+          if (h.ok) {
+            analysis = h.analysis;
+            modelUsed = haikuModel + " (fallback)";
+          } else {
+            return new Response(
+              JSON.stringify({
+                error: "Both models failed",
+                gemini: `${lastGeminiErr?.status}: ${lastGeminiErr?.detail}`.slice(0, 300),
+                haiku: `${h.status}: ${h.detail}`.slice(0, 300),
+              }),
+              { status: 502, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
+            );
+          }
         } else {
           return new Response(
-            JSON.stringify({ error: "Both models failed", gemini: `${g.status}: ${g.detail}`.slice(0, 300), haiku: `${h.status}: ${h.detail}`.slice(0, 300) }),
+            JSON.stringify({
+              error: `All Gemini models failed (${lastGeminiErr?.status || 502})`,
+              detail: String(lastGeminiErr?.detail || "Gemini unavailable").slice(0, 400),
+            }),
             { status: 502, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
           );
         }
-      } else {
-        return new Response(
-          JSON.stringify({ error: `Gemini error (${g.status})`, detail: String(g.detail).slice(0, 400) }),
-          { status: 502, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
-        );
       }
 
       // Auto-save to KV
