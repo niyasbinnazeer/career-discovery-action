@@ -404,6 +404,80 @@ body{
   .facts-grid{grid-template-columns:1fr}
   .drawer{max-width:100%}
 }
+
+/* ============ TAILOR & RESUME STUDIO ============ */
+.tailor-card{
+  background:linear-gradient(135deg, #fdf4ff 0%, #f5f3ff 50%, #eff6ff 100%);
+  border:1px solid #d8b4fe; border-radius:14px; padding:16px 18px; margin-bottom:22px;
+  box-shadow:0 2px 8px rgba(124, 58, 237, 0.06);
+}
+.tailor-head{display:flex; align-items:center; gap:12px; margin-bottom:12px}
+.tailor-icon{
+  width:36px; height:36px; border-radius:10px;
+  background:linear-gradient(135deg, #9333ea, #4f46e5); color:#ffffff;
+  display:flex; align-items:center; justify-content:center; font-size:18px;
+  flex-shrink:0; box-shadow:0 2px 4px rgba(124, 58, 237, 0.25);
+}
+.tailor-title{font-size:14px; font-weight:700; color:#1e1b4b; letter-spacing:-0.01em}
+.tailor-sub{font-size:12px; color:#6b7280; line-height:1.4; margin-top:2px}
+.tailor-btns{display:flex; flex-wrap:wrap; gap:8px}
+.btn-tailor{
+  display:inline-flex; align-items:center; gap:6px; padding:8px 13px;
+  border-radius:8px; font-size:12.5px; font-weight:600; cursor:pointer;
+  border:0.5px solid; transition:all 0.15s ease; font-family:inherit;
+}
+.btn-tailor-primary{
+  background:#7c3aed; color:#ffffff; border-color:#6d28d9;
+  box-shadow:0 1px 3px rgba(124, 58, 237, 0.2);
+}
+.btn-tailor-primary:hover{background:#6d28d9}
+.btn-tailor-secondary{background:#ffffff; color:#4338ca; border-color:#c7d2fe}
+.btn-tailor-secondary:hover{background:#eef2ff; border-color:#a5b4fc}
+
+/* ============ RESUME MODAL ============ */
+.modal-bg{
+  position:fixed; inset:0; background:rgba(0,0,0,0.55); backdrop-filter:blur(4px);
+  display:none; align-items:center; justify-content:center; z-index:1050; padding:20px;
+}
+.modal-bg.open{display:flex}
+.resume-modal{
+  background:var(--card); border-radius:16px; width:100%; max-width:840px; max-height:90vh;
+  display:flex; flex-direction:column; box-shadow:0 20px 48px rgba(0,0,0,0.22);
+  border:0.5px solid var(--border); overflow:hidden; animation:modalPop 0.18s ease-out;
+}
+@keyframes modalPop{ from{opacity:0; transform:scale(0.96)} to{opacity:1; transform:scale(1)} }
+.resume-modal-header{
+  padding:18px 24px; border-bottom:0.5px solid var(--border); display:flex;
+  align-items:flex-start; justify-content:space-between; gap:16px;
+}
+.resume-modal-tag{
+  font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em;
+  color:var(--accent); margin-bottom:4px; display:inline-flex; align-items:center; gap:5px;
+}
+.resume-modal-title{font-size:17px; font-weight:700; color:var(--text); letter-spacing:-0.01em}
+.resume-modal-sub{font-size:13px; color:var(--muted); margin-top:2px}
+.resume-modal-toolbar{
+  padding:10px 24px; background:#fafafa; border-bottom:0.5px solid var(--border);
+  display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+}
+.resume-modal-content{flex:1; overflow:hidden; display:flex; padding:16px 24px 20px}
+.resume-text-view{
+  width:100%; height:55vh; padding:16px; border-radius:10px; border:0.5px solid var(--border);
+  background:#ffffff; color:#18181b; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size:12.5px; line-height:1.6; resize:none; outline:none; white-space:pre-wrap;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,0.03);
+}
+.resume-text-view:focus{border-color:var(--accent)}
+
+/* ============ TOAST ============ */
+.toast{
+  position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(100px);
+  background:#18181b; color:#fff; padding:10px 20px; border-radius:99px;
+  font-size:13px; font-weight:500; display:flex; align-items:center; gap:8px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.25); z-index:9999; opacity:0; pointer-events:none;
+  transition:all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.toast.show{transform:translateX(-50%) translateY(0); opacity:1}
 </style>
 </head>
 <body>
@@ -429,6 +503,30 @@ body{
 <div class="drawer-bg" id="drawer-bg" onclick="if(event.target===this)closeDrawer()">
   <div class="drawer" id="drawer"></div>
 </div>
+
+<div class="modal-bg" id="resume-modal-bg" onclick="if(event.target===this)closeResumeModal()">
+  <div class="resume-modal" id="resume-modal">
+    <div class="resume-modal-header">
+      <div>
+        <div class="resume-modal-tag"><i class="ti ti-sparkles"></i> ATS Tailored Document</div>
+        <div class="resume-modal-title" id="resume-modal-job-title">Job Title</div>
+        <div class="resume-modal-sub" id="resume-modal-company">Company</div>
+      </div>
+      <button class="drawer-close" onclick="closeResumeModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="resume-modal-toolbar">
+      <button class="btn-ghost" onclick="copyModalResume()"><i class="ti ti-copy"></i> Copy Resume (Markdown)</button>
+      <button class="btn-ghost" onclick="downloadModalResume()"><i class="ti ti-download"></i> Download .md</button>
+      <button class="btn-ghost" onclick="copyResumePrompt(currentDetailId)"><i class="ti ti-robot"></i> Copy AI Prompt</button>
+      <button class="btn-ghost" onclick="copyCoverLetterPrompt(currentDetailId)"><i class="ti ti-mail"></i> Copy Cover Letter Prompt</button>
+    </div>
+    <div class="resume-modal-content">
+      <textarea id="resume-text-area" class="resume-text-view" spellcheck="false"></textarea>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
 
 <script>
 const KEY = new URLSearchParams(location.search).get('key');
@@ -706,6 +804,7 @@ function openDetail(id) {
         factCell('Posted', postedLabel(job.postedDate).replace(/^Posted /,''), 'ti-calendar') +
         factCell('Visa / sponsorship', a.visaSponsorship, 'ti-plane') +
       '</div>' +
+      tailorCard(job) +
       (a.companySignal ? '<div class="signal-row"><div class="signal-row-icon"><i class="ti ti-shield-check"></i></div><div class="signal-row-body">' +
         '<div class="signal-row-label">Company signal</div>' +
         '<div class="signal-row-value"><span class="signal-badge signal-' + (a.companySignal.includes('Top')?'Top':a.companySignal.includes('Good')?'Good':a.companySignal.includes('Caution')?'Caution':'Unknown') + '">' + escapeHtml(a.companySignal) + '</span></div>' +
@@ -851,7 +950,378 @@ function applyTooltip(job) {
   return isAdzunaUrl(job && job.url) ? 'Search LinkedIn / Indeed for the original posting (Adzuna blocks cross-region viewing)' : 'Open original job page';
 }
 
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+function tailorCard(job) {
+  const isDoc = isPhd(job);
+  const promptLabel = isDoc ? 'Copy PhD Motivation Prompt' : 'Copy Cover Letter Prompt';
+  return '<div class="tailor-card">' +
+    '<div class="tailor-head">' +
+      '<div class="tailor-icon"><i class="ti ti-sparkles"></i></div>' +
+      '<div>' +
+        '<div class="tailor-title">Tailor Application & Resume</div>' +
+        '<div class="tailor-sub">' + (isDoc ? 'Generate an academic CV draft or AI prompts tuned for doctoral committee evaluation.' : '1-click ATS resume customized for this role, plus turnkey AI prompts with candidate profile pre-filled.') + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="tailor-btns">' +
+      '<button class="btn-tailor btn-tailor-primary" onclick="showTailoredResume(\'' + job.id + '\')"><i class="ti ti-file-text"></i> View Tailored Resume Draft</button>' +
+      '<button class="btn-tailor btn-tailor-secondary" onclick="copyResumePrompt(\'' + job.id + '\')"><i class="ti ti-robot"></i> Copy AI Resume Prompt</button>' +
+      '<button class="btn-tailor btn-tailor-secondary" onclick="copyCoverLetterPrompt(\'' + job.id + '\')"><i class="ti ti-mail"></i> ' + promptLabel + '</button>' +
+    '</div>' +
+  '</div>';
+}
+
+function showTailoredResume(id) {
+  const job = allJobs.find(j => j.id === id);
+  if (!job) return;
+  const a = job.analysis || {};
+  document.getElementById('resume-modal-job-title').textContent = (a.actualRole || 'Tailored Document') + (isPhd(job) ? ' (Academic CV)' : ' (ATS Resume)');
+  document.getElementById('resume-modal-company').textContent = (a.company || 'Target Organization') + (a.location ? ' · ' + a.location : '');
+  const content = buildTailoredResumeText(job);
+  document.getElementById('resume-text-area').value = content;
+  document.getElementById('resume-modal-bg').classList.add('open');
+}
+
+function closeResumeModal() {
+  const bg = document.getElementById('resume-modal-bg');
+  if (bg) bg.classList.remove('open');
+}
+
+function copyModalResume() {
+  const text = document.getElementById('resume-text-area').value;
+  copyToClipboard(text, 'Copied tailored resume to clipboard!');
+}
+
+function downloadModalResume() {
+  const job = allJobs.find(j => j.id === currentDetailId);
+  const a = (job && job.analysis) || {};
+  const cleanRole = ((a.actualRole || 'Resume') + '-' + (a.company || 'Biotech')).replace(/[^a-zA-Z0-9_-]/g, '_');
+  const filename = 'Sudakshina_Deb_' + cleanRole + '.md';
+  const text = document.getElementById('resume-text-area').value;
+  downloadMarkdown(filename, text);
+}
+
+function copyResumePrompt(id) {
+  const job = allJobs.find(j => j.id === id);
+  if (!job) return;
+  const prompt = buildResumePrompt(job);
+  copyToClipboard(prompt, 'Copied AI Resume Prompt! Paste into Claude, ChatGPT, or Gemini.');
+}
+
+function copyCoverLetterPrompt(id) {
+  const job = allJobs.find(j => j.id === id);
+  if (!job) return;
+  const prompt = buildCoverLetterPrompt(job);
+  copyToClipboard(prompt, 'Copied Cover Letter / Statement Prompt to clipboard!');
+}
+
+function copyToClipboard(text, successMsg) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast(successMsg || 'Copied to clipboard!');
+    }).catch(() => {
+      fallbackCopy(text, successMsg);
+    });
+  } else {
+    fallbackCopy(text, successMsg);
+  }
+}
+
+function fallbackCopy(text, successMsg) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast(successMsg || 'Copied to clipboard!');
+  } catch (e) {
+    showToast('Could not copy automatically. Please copy manually.');
+  }
+}
+
+function downloadMarkdown(filename, content) {
+  const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Downloaded ' + filename);
+}
+
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.innerHTML = '<i class="ti ti-check"></i> ' + escapeHtml(msg);
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.classList.remove('show'); }, 3000);
+}
+
+function buildTailoredResumeText(job) {
+  const a = job.analysis || {};
+  const isDoc = isPhd(job);
+  const role = a.actualRole || 'Biotech Scientist';
+  const company = a.company || 'Biopharmaceutical Organization';
+  const loc = a.location || 'Bangalore, India';
+  const strengths = a.strengths || [];
+
+  if (isDoc) {
+    return [
+      '# SUDAKSHINA DEB',
+      '**Academic Curriculum Vitae & Doctoral Research Dossier**',
+      'Bangalore, Karnataka, India | sudakshinadeb@gmail.com | linkedin.com/in/sudakshina-deb',
+      '',
+      '---',
+      '',
+      '### PROPOSED DOCTORAL CANDIDACY',
+      '**Target Program / Group:** ' + role + ' — ' + company + (loc ? ' (' + loc + ')' : ''),
+      '**Core Research Focus:** Macromolecular Downstream Purification, Structural Bioprocessing & Computational Genomics',
+      '',
+      '### ACADEMIC & RESEARCH PROFILE',
+      'Accomplished bioprocess scientist with 4 years of rigorous industrial R&D experience in downstream protein sciences at Syngene International Ltd. combined with a solid academic foundation in Zoology (M.Sc. First Class Honours, NEHU) and Bioinformatics/Genomics (PG Diploma, Bversity). Hands-on mastery of AKTA preparative chromatography, therapeutic monoclonal antibodies (mAbs), bispecifics, and high-resolution analytical characterization (SEC-HPLC, Western Blot, SDS-PAGE), augmented by computational genomics workflows (QIIME2, Python, AlphaFold2). Highly motivated to undertake doctoral research at ' + company + ', bringing proven experimental bench rigor, experimental design, and multidisciplinary bioinformatic capabilities.',
+      '',
+      '### EDUCATION & ACADEMIC CREDENTIALS',
+      '- **Post Graduate Diploma in Bioinformatics and Applied Genomics** (2022)',
+      '  *Bversity, India* — Distinction',
+      '  *Focus:* NGS pipelines, Python/R for genomics, structural bioinformatics, molecular docking.',
+      '',
+      '- **Master of Science (M.Sc.) in Zoology (Honours)** (2018 – 2020)',
+      '  *North-Eastern Hill University (NEHU), Shillong, Meghalaya* — First Class Honours',
+      '  *Focus:* Molecular biology, genetics, cell biology, biochemistry, biostatistics.',
+      '',
+      '- **Bachelor of Science (B.Sc.) in Zoology (Honours)**',
+      '  *First Class*, Core coursework in Cellular Biology, Physiology, and Genetics.',
+      '',
+      '### RESEARCH & PROFESSIONAL EXPERIENCE',
+      '**Syngene International Limited** | Bangalore, India',
+      '*Senior Scientist — Downstream Protein Sciences & Discovery Biology* (2022 – Present)',
+      '*(Promoted from Senior Research Associate)*',
+      '- Directed downstream chromatography purification and process optimization for 40+ recombinant projects, including monoclonal antibodies (mAbs), complex bispecific constructs, and His-tagged target proteins.',
+      '- Designed and optimized multi-step purification strategies utilizing AKTA Pure and AKTA Avant systems across Affinity (Protein A/G, Ni-NTA), CEX, AEX, and SEC, consistently achieving >95% monomer purity.',
+      '- Engineered Tangential Flow Filtration (TFF) and ultrafiltration/diafiltration (UF/DF) workflows, accelerating buffer exchange turnaround by 25% while maintaining quantitative yield recovery (>90%).',
+      '- Performed analytical characterization including SEC-HPLC (purity and aggregate quantification), SDS-PAGE (reducing/non-reducing), Western Blotting, and Endosafe kinetic LAL endotoxin testing.',
+      '- Maintained strict data integrity standards under ALCOA++ guidelines; authored Batch Manufacturing Records (BMR) and standard operating procedures (SOPs).',
+      '- Awarded the Syngene SPOT Award (Feb 2023) for downstream troubleshooting and timely delivery of high-purity bispecific antibody batches.',
+      '',
+      '**Rajiv Gandhi Centre for Biotechnology (RGCB) / Academic Collaboration**',
+      '*Graduate Research Fellow — Neurodevelopmental Disorder Genetics*',
+      '- Investigated genetic variants and molecular markers associated with Fragile X syndrome and intellectual developmental disabilities.',
+      '- Executed genomic DNA extraction, PCR amplifications, primer design, gel electrophoresis, and Sanger sequencing analyses.',
+      '- Co-authored 1 peer-reviewed research publication in molecular genetics.',
+      '',
+      '### TECHNICAL & SCIENTIFIC COMPETENCIES',
+      '- **Preparative Chromatography & Equipment:** AKTA pure, AKTA avant, UNICORN software, Protein A, Protein G, Ni-NTA, CEX, AEX, HIC, SEC.',
+      '- **Bioprocess & Membrane Technologies:** Tangential Flow Filtration (TFF, Pellicon cassettes), Centricon UF/DF, dialysis, buffer formulation.',
+      '- **Analytical Characterization:** SEC-HPLC (aggregation & purity profiling), SDS-PAGE, Western Blot, Endosafe PTS (LAL endotoxin assays), UV-Vis spectrometry.',
+      '- **Computational Biology & In Silico:** Python (Biopython, Pandas, NumPy), R, Linux/Bash, NGS analysis, QIIME2 microbiome pipeline (DADA2, SILVA), AlphaFold2, PyMOL.',
+      '- **Quality & Data Governance:** ALCOA++ compliance, BMR authoring, GLP/GMP laboratory documentation.',
+      '',
+      '### PUBLICATIONS, AWARDS & HACKATHONS',
+      '- **Peer-Reviewed Journal Publication:** Co-author on genetic investigation of neurodevelopmental disorders (RGCB collaboration).',
+      '- **Syngene SPOT Award (Feb 2023):** Recognized for exceptional troubleshooting and downstream recovery optimization.',
+      '- **IBAB Hackathon Participant:** Computational antibody CDR engineering & binding site prediction.'
+    ].join('\n');
+  }
+
+  const isComp = /bioinform|computational|ngs|data|genom/i.test(role + ' ' + (a.jobCategory||''));
+  const targetHeadline = isComp
+    ? 'Bioinformatics & Downstream Protein Scientist'
+    : 'Senior Scientist — Downstream Protein Sciences & Bioprocess Development';
+
+  return [
+    '# SUDAKSHINA DEB',
+    '**' + targetHeadline + '**',
+    'Bangalore, Karnataka, India | sudakshinadeb@gmail.com | linkedin.com/in/sudakshina-deb',
+    '',
+    '---',
+    '',
+    '### TARGET POSITION',
+    '**' + role + '** | ' + company + (loc ? ' (' + loc + ')' : ''),
+    (strengths.length ? '*Matched Core Competencies: ' + strengths.slice(0, 3).join(' · ') + '*' : ''),
+    '',
+    '### PROFESSIONAL SUMMARY',
+    'Accomplished Life Sciences Senior Scientist with 4 years of biopharmaceutical industry experience at Syngene International Ltd. specializing in downstream protein purification, bioprocess development, and analytical characterization. Hands-on expert in AKTA chromatography (Protein A, Ni-NTA, IEX, SEC, HIC), Tangential Flow Filtration (TFF), and SEC-HPLC purity profiling for mAbs, bispecifics, and recombinant proteins. Combines robust wet-lab bioprocess rigor with computational proficiency in Python, R, QIIME2, and AlphaFold2. Proven record of delivering high-recovery, low-endotoxin batches under ALCOA++ standards; recipient of Syngene SPOT Award.',
+    '',
+    '### CORE COMPETENCIES',
+    '- **Downstream Chromatography:** AKTA Pure, AKTA Avant, UNICORN; Affinity (Protein A/G, Ni-NTA His-tag), Ion Exchange (CEX, AEX), Size Exclusion (SEC), Hydrophobic Interaction (HIC).',
+    '- **Bioprocess & UF/DF:** Tangential Flow Filtration (TFF, Pellicon cassettes), Centricon ultrafiltration, membrane dialysis, buffer formulation & optimization.',
+    '- **Analytical & Quality Testing:** SEC-HPLC (monomer purity & aggregate quantification), SDS-PAGE (reducing/non-reducing), Western Blot, Endosafe PTS kinetic LAL endotoxin assays, UV-Vis.',
+    '- **Biotherapeutic Modalities:** Monoclonal antibodies (mAbs), Bispecific antibodies (bsAbs), Fc-fusion constructs, His-tagged antigens, therapeutic enzymes.',
+    '- **Computational & Data Analysis:** Python (Pandas, NumPy, Biopython), R, Linux/Bash, NGS workflows, QIIME2 amplicon pipeline, AlphaFold2 structural modeling, PyMOL.',
+    '- **Compliance & Standards:** ALCOA++ data integrity, Batch Manufacturing Records (BMR), Standard Operating Procedures (SOPs), GLP/GMP-aligned R&D.',
+    '',
+    '### PROFESSIONAL EXPERIENCE',
+    '**SYNGENE INTERNATIONAL LIMITED** | Bangalore, India',
+    '*Senior Scientist — Downstream Protein Sciences & Discovery Biology* (2022 – Present)',
+    '*(Promoted from Senior Research Associate)*',
+    '- Spearheaded downstream purification and recovery optimization for 40+ biotherapeutic projects, including mAbs, bispecific antibodies, and complex recombinant proteins.',
+    '- Developed, scaled, and standardized multi-step AKTA chromatography workflows across Protein A, Ni-NTA, CEX, AEX, and SEC, consistently attaining >95% monomer purity.',
+    '- Established Tangential Flow Filtration (TFF) and ultrafiltration/diafiltration (UF/DF) parameters, cutting cycle time by 25% while sustaining >90% product recovery.',
+    '- Conducted routine release testing: SEC-HPLC aggregate analysis, reducing and non-reducing SDS-PAGE, Western blot validation, and Endosafe kinetic LAL endotoxin quantification.',
+    '- Championed ALCOA++ data integrity adherence; authored and revised Standard Operating Procedures (SOPs) and comprehensive Batch Manufacturing Records (BMRs).',
+    '- Honored with the Syngene SPOT Award (Feb 2023) for rapid downstream troubleshooting and on-time delivery of critical client biotherapeutic batches.',
+    '',
+    '**RAJIV GANDHI CENTRE FOR BIOTECHNOLOGY (RGCB) / ACADEMIC COLLABORATION**',
+    '*Graduate Research Fellow — Molecular Genetics*',
+    '- Investigated genetic variants and molecular mechanisms contributing to Fragile X syndrome and intellectual developmental disorders.',
+    '- Performed PCR amplifications, primer design, gel electrophoresis, genotyping assays, and Sanger sequencing analyses.',
+    '- Co-authored 1 peer-reviewed research publication in molecular genetics.',
+    '',
+    '### EDUCATION & CREDENTIALS',
+    '- **Post Graduate Diploma in Bioinformatics and Applied Genomics** — Bversity (Distinction)',
+    '- **Master of Science (M.Sc.) in Zoology (Honours)** — North-Eastern Hill University (NEHU), Shillong (First Class)',
+    '- **Bachelor of Science (B.Sc.) in Zoology (Honours)** — First Class',
+    '',
+    '### AWARDS & HACKATHONS',
+    '- **Syngene SPOT Award (Feb 2023):** Recognized for downstream recovery optimization and delivery excellence.',
+    '- **IBAB Computational Antibody Hackathon:** In silico CDR engineering and molecular binding site modeling.'
+  ].join('\n');
+}
+
+function buildResumePrompt(job) {
+  const a = job.analysis || {};
+  const isDoc = isPhd(job);
+  const role = a.actualRole || 'Biotech Scientist';
+  const company = a.company || 'Organization';
+  const loc = a.location || 'Bangalore, India';
+  const exp = a.experienceRequired || 'Not specified';
+  const visa = a.visaSponsorship || 'Not specified';
+  const score = a.matchScore || 0;
+  const strengths = (a.strengths || []).join('; ');
+  const gaps = (a.gaps || []).join('; ');
+  const tips = (a.applicationTips || []).join('\\n- ');
+  const reasoning = a.reasoning || '';
+
+  return 'You are a world-class Biotech & Life Sciences Executive Resume Strategist and ATS Specialist.\\n\\n' +
+    'Your goal is to generate a comprehensive, tailored, ATS-compliant Markdown Resume for the following candidate applying for this specific target position.\\n\\n' +
+    '==================================================\\n' +
+    'TARGET POSITION DETAILS\\n' +
+    '==================================================\\n' +
+    '- Target Role: ' + role + '\\n' +
+    '- Organization / Company: ' + company + '\\n' +
+    '- Location: ' + loc + '\\n' +
+    '- Role Classification: ' + (isDoc ? 'PhD / Doctoral Research Candidacy' : 'Industry Life Sciences Role') + '\\n' +
+    '- Experience Requirement: ' + exp + '\\n' +
+    '- Visa / Sponsorship Status: ' + visa + '\\n' +
+    '- Current Match Score: ' + score + '/100\\n' +
+    '- Matched Strengths: ' + (strengths || 'None specified') + '\\n' +
+    '- Identified Gaps to Reframe/Bridge: ' + (gaps || 'None specified') + '\\n' +
+    '- Analysis Reasoning: ' + reasoning + '\\n' +
+    '- Strategic Application Tips:\\n- ' + (tips || 'Focus on relevant downstream purification and characterization experience.') + '\\n\\n' +
+    '==================================================\\n' +
+    'CANDIDATE MASTER DOSSIER (SUDAKSHINA DEB)\\n' +
+    '==================================================\\n' +
+    'Candidate: Sudakshina Deb\\n' +
+    'Contact: Bangalore, Karnataka, India | sudakshinadeb@gmail.com | linkedin.com/in/sudakshina-deb\\n\\n' +
+    'Current Role:\\n' +
+    '- Senior Scientist — Downstream Protein Sciences & Discovery Biology at Syngene International Ltd., Bangalore (~4 years, 2022 – Present). Promoted from Senior Research Associate.\\n' +
+    '- Key Achievements:\\n' +
+    '  * Handled downstream chromatography and recovery optimization for 40+ recombinant therapeutic projects (monoclonal antibodies/mAbs, bispecific antibodies, fusion proteins, His-tagged antigens).\\n' +
+    '  * AKTA Pure and AKTA Avant systems (UNICORN): Affinity (Protein A/G, Ni-NTA), Ion Exchange (CEX, AEX), Size Exclusion (SEC), Hydrophobic Interaction (HIC). Purity >95%.\\n' +
+    '  * Tangential Flow Filtration (TFF, Pellicon cassettes), Centricon UF/DF, dialysis; reduced cycle time by 25% while maintaining >90% yield.\\n' +
+    '  * Analytical testing: SEC-HPLC (aggregates, monomer purity), SDS-PAGE (reducing & non-reducing), Western Blot, Endosafe PTS kinetic LAL endotoxin testing, UV-Vis.\\n' +
+    '  * Compliance: ALCOA++ data integrity, SOP authoring, Batch Manufacturing Records (BMR).\\n' +
+    '  * Awards: Syngene SPOT Award (Feb 2023) for yield optimization and client batch delivery.\\n\\n' +
+    'Computational & Bioinformatics Toolset:\\n' +
+    '- Languages: Python (Biopython, Pandas, NumPy), R, Linux/Bash shell.\\n' +
+    '- Genomics: QIIME2 amplicon microbiome pipeline (DADA2, SILVA database), NGS preprocessing.\\n' +
+    '- Structural: AlphaFold2 structure prediction, PyMOL visualization, antibody CDR modeling (IBAB Hackathon).\\n\\n' +
+    'Academic Research:\\n' +
+    '- Graduate Research Fellow (RGCB collaboration): Fragile X syndrome / neurodevelopmental genetics. PCR, Sanger sequencing, genotyping.\\n' +
+    '- Publication: Co-authored 1 peer-reviewed research paper in genetics.\\n\\n' +
+    'Education:\\n' +
+    '- Post Graduate Diploma in Bioinformatics & Applied Genomics — Bversity (Distinction)\\n' +
+    '- M.Sc. in Zoology (Honours) — North-Eastern Hill University (NEHU), Shillong (First Class)\\n' +
+    '- B.Sc. in Zoology (Honours) — First Class\\n\\n' +
+    '==================================================\\n' +
+    'INSTRUCTIONS FOR RESUME GENERATION\\n' +
+    '==================================================\\n' +
+    '1. Craft an ATS-optimized, high-impact resume in clean GitHub-flavored Markdown.\\n' +
+    '2. Weave in the key requirements of ' + company + '\\\'s ' + role + ' role naturally.\\n' +
+    '3. Feature the matched strengths: ' + strengths + '.\\n' +
+    '4. Bridge or reframe any identified gaps (' + gaps + ') using candidate\\\'s transferrable wet-lab, analytical, and bioinformatic skills.\\n' +
+    '5. Format with:\\n' +
+    '   - Header & Target Role\\n' +
+    '   - Tailored Professional Summary / Profile\\n' +
+    '   - Core Competency Matrix\\n' +
+    '   - Professional Experience with high-impact STAR bullet points (Action + Metric + Result)\\n' +
+    '   - Academic Research & Dissertations\\n' +
+    '   - Education & Certifications\\n' +
+    '   - Publications & Awards\\n' +
+    '6. Strictly preserve factual integrity: do not fabricate unperformed degrees or techniques.';
+}
+
+function buildCoverLetterPrompt(job) {
+  const a = job.analysis || {};
+  const isDoc = isPhd(job);
+  const role = a.actualRole || 'Biotech Scientist';
+  const company = a.company || 'Organization';
+  const loc = a.location || 'Bangalore, India';
+  const strengths = (a.strengths || []).join('; ');
+  const tips = (a.applicationTips || []).join('\\n- ');
+
+  if (isDoc) {
+    return 'You are an expert Academic Career Mentor and Doctoral Admissions Consultant.\\n\\n' +
+      'Write a compelling, articulate 1-page Academic Statement of Purpose / Motivation Letter for Sudakshina Deb applying for the PhD / Doctoral position below:\\n\\n' +
+      'PROGRAM / VACANCY:\\n' +
+      '- Position: ' + role + '\\n' +
+      '- University / Institute: ' + company + '\\n' +
+      '- Location: ' + loc + '\\n' +
+      '- Matched Strengths: ' + strengths + '\\n\\n' +
+      'APPLICANT PROFILE:\\n' +
+      '- Sudakshina Deb (Bangalore, India)\\n' +
+      '- 4 years industrial R&D experience as Senior Scientist in Downstream Protein Sciences at Syngene International Ltd.\\n' +
+      '- Proven wet-lab mastery: AKTA chromatography (Protein A, Ni-NTA, CEX, SEC), mAbs, bispecifics, TFF, SEC-HPLC, Endosafe endotoxin testing, ALCOA++ compliance.\\n' +
+      '- Computational capabilities: Python, R, QIIME2 microbiome analysis, AlphaFold2 structure prediction.\\n' +
+      '- Academic credentials: M.Sc. Zoology (Honours, First Class) from NEHU Shillong; PG Diploma in Bioinformatics & Genomics (Distinction) from Bversity.\\n' +
+      '- Research dissertation: Neurodevelopmental disorder genetics (Fragile X syndrome) in collaboration with Rajiv Gandhi Centre for Biotechnology (RGCB); 1 co-authored peer-reviewed publication.\\n' +
+      '- Award: Syngene SPOT Award (Feb 2023).\\n\\n' +
+      'INSTRUCTIONS:\\n' +
+      '1. Write a professional, passionate, and scientifically rigorous 1-page Motivation Letter.\\n' +
+      '2. Explain why this specific doctoral research at ' + company + ' aligns with her trajectory bridging industrial downstream macromolecular bioprocesses and computational biology.\\n' +
+      '3. Emphasize how her 4 years of industrial bench discipline and troubleshooting make her uniquely prepared for doctoral research.\\n' +
+      '4. Output in clean Markdown format with standard formal academic letter structure.';
+  }
+
+  return 'You are an expert Biotech Executive Recruiter and Cover Letter Strategist.\\n\\n' +
+    'Write a persuasive, tailored, and highly engaging 1-page Cover Letter for Sudakshina Deb applying for the following industry role:\\n\\n' +
+    'TARGET ROLE:\\n' +
+    '- Role: ' + role + '\\n' +
+    '- Company: ' + company + '\\n' +
+    '- Location: ' + loc + '\\n' +
+    '- Matched Core Strengths: ' + strengths + '\\n' +
+    '- Key Guidance / Application Tips:\\n- ' + tips + '\\n\\n' +
+    'CANDIDATE BACKGROUND:\\n' +
+    '- Sudakshina Deb (Bangalore, India | Senior Scientist at Syngene International Ltd., 4 years)\\n' +
+    '- Downstream protein purification, AKTA Pure/Avant (Protein A, Ni-NTA, IEX, SEC), mAbs, bispecifics, TFF, SEC-HPLC, LAL endotoxin assays, ALCOA++, SPOT Award.\\n' +
+    '- Computational tools: Python, R, QIIME2, AlphaFold2.\\n' +
+    '- Degrees: M.Sc. Zoology (First Class, NEHU), PG Diploma Bioinformatics (Bversity).\\n\\n' +
+    'INSTRUCTIONS:\\n' +
+    '1. Craft an impactful 1-page Cover Letter tailored directly to ' + company + '\\\'s mission and the ' + role + ' requirements.\\n' +
+    '2. Hook the hiring manager in the opening paragraph with relevant achievements and enthusiasm for ' + company + '.\\n' +
+    '3. Highlight her downstream purification mastery (AKTA, mAbs, bispecifics, SEC-HPLC) and analytical rigor.\\n' +
+    '4. Conclude with a strong, confident call to action for an interview.\\n' +
+    '5. Format in clean GitHub-flavored Markdown.';
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    const modalBg = document.getElementById('resume-modal-bg');
+    if (modalBg && modalBg.classList.contains('open')) {
+      closeResumeModal();
+    } else {
+      closeDrawer();
+    }
+  }
+});
 load();
 </script>
 </body>
