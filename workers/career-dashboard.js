@@ -501,6 +501,7 @@ body{
       </div>
     </div>
     <div class="header-actions">
+      <button class="btn-ghost" style="background:#eef2ff;color:#4f46e5;font-weight:600;border:1px solid #c7d2fe" onclick="downloadMasterDocx()"><i class="ti ti-file-certificate"></i>General CV (.docx)</button>
       <button class="btn-ghost" onclick="load()" title="Refresh"><i class="ti ti-refresh"></i>Refresh</button>
       <button class="btn-ghost" onclick="dedupJobs()" title="Remove duplicate entries"><i class="ti ti-copy-off"></i>Remove duplicates</button>
       <button class="btn-ghost" onclick="exportCSV()"><i class="ti ti-download"></i>Export</button>
@@ -1078,11 +1079,215 @@ function saveBlobFile(filename, blob) {
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
+async function downloadMasterDocx() {
+  if (typeof window.docx === 'undefined') {
+    showToast('Word generator loading... please try again in a moment');
+    return;
+  }
+  showToast('Generating Master General Industry Resume (.docx)...');
+  try {
+    const { Document, Packer, Paragraph, TextRun, AlignmentType, BorderStyle } = window.docx;
+    const children = [];
+
+    // Header Name
+    children.push(new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 60 },
+      children: [
+        new TextRun({ text: "SUDAKSHINA DEB", bold: true, size: 34, font: "Calibri", color: "1E3A8A" })
+      ]
+    }));
+
+    // Headline
+    children.push(new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 100 },
+      children: [
+        new TextRun({ text: "Senior Scientist — Discovery Biology & Downstream Protein Sciences", bold: true, size: 22, font: "Calibri", color: "374151" })
+      ]
+    }));
+
+    // Contact
+    children.push(new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 180 },
+      children: [
+        new TextRun({ text: "Bengaluru, India  |  +91-7005314758  |  sudakshinadeb97@gmail.com  |  linkedin.com/in/sudakshina-deb", size: 19, font: "Calibri", color: "4B5563" })
+      ]
+    }));
+
+    function addSection(title) {
+      children.push(new Paragraph({
+        spacing: { before: 200, after: 80 },
+        border: {
+          bottom: { color: "1E3A8A", space: 3, style: BorderStyle.SINGLE, size: 12 }
+        },
+        children: [
+          new TextRun({ text: title.toUpperCase(), bold: true, size: 21, font: "Calibri", color: "1E3A8A" })
+        ]
+      }));
+    }
+
+    function addBullet(boldPrefix, text) {
+      children.push(new Paragraph({
+        bullet: { level: 0 },
+        spacing: { before: 30, after: 40 },
+        children: [
+          new TextRun({ text: boldPrefix ? boldPrefix + " " : "", bold: !!boldPrefix, size: 20, font: "Calibri", color: "1F2937" }),
+          new TextRun({ text: text, size: 20, font: "Calibri", color: "374151" })
+        ]
+      }));
+    }
+
+    // Professional Summary
+    addSection("Professional Summary");
+    const summaryText = "Results-driven Senior Scientist with ~4 years of biopharmaceutical industry experience in Discovery Biology and Downstream Protein Sciences at Syngene International Ltd. Proven track record leading end-to-end purification of complex biologics—including monoclonal antibodies (mAbs), bispecific antibodies (bsAbs), and His-tagged recombinant proteins—utilizing AKTA chromatography systems (Protein A/G, Ni-NTA, IEX, HIC, SEC) and Tangential Flow Filtration (TFF). Highly proficient in analytical release testing and quality characterization (SEC-HPLC, SDS-PAGE, Western blot, LC-MS/MS, UV-Vis, Endosafe kinetic LAL endotoxin assays) under strict GLP/ALCOA++ data integrity compliance. Seamlessly integrates wet-lab bioprocess rigor with computational genomics and bioinformatics workflows (Python, R, QIIME2, AlphaFold2). Conferred the Syngene SPOT Award (Feb 2023) for rapid troubleshooting and high-recovery protein delivery for global biopharma clients.";
+    children.push(new Paragraph({
+      spacing: { after: 120 },
+      children: [
+        new TextRun({ text: summaryText, size: 20, font: "Calibri", color: "374151" })
+      ]
+    }));
+
+    // Core Technical Competencies
+    addSection("Core Technical Competencies");
+    addBullet("Downstream Processing & Chromatography:", "AKTA Pure, AKTA Avant, UNICORN software; Affinity (Protein A/G, Ni-NTA His-tag), Ion Exchange (IEX/CEX/AEX), Hydrophobic Interaction (HIC), Size Exclusion (SEC/GFC); desalting, buffer exchange, batch binding, dialysis, ultrafiltration, and Tangential Flow Filtration (TFF, Pellicon).");
+    addBullet("Bioanalytical Characterization & Quality Control:", "SEC-HPLC (monomer purity & aggregate profiling), SDS-PAGE (reducing/non-reducing), Western blotting, LC-MS/MS, UV-Vis spectrophotometry, Endosafe PTS/MCS (kinetic LAL endotoxin testing/removal), flow cytometry, protein impurity characterization.");
+    addBullet("Molecular Biology & In Vivo Operations:", "Recombinant protein expression, PCR, primer design, Sanger sequencing, gene expression profiling, aseptic mammalian cell culture, passaging, in vivo animal handling (rodent procedures, model organisms).");
+    addBullet("Computational Biology & Data Science:", "Python (Pandas, Biopython), R (tidyverse), Linux/Bash scripting, NGS genomic data analysis, QIIME2 (DADA2 pipeline), AlphaFold2 (ColabFold), antibody CDR engineering, biological databases (SILVA, NCBI BLAST, STRING, ExPASy).");
+    addBullet("Quality, Regulatory & Lab Operations:", "ALCOA++ data integrity standards, Standard Operating Procedures (SOPs), Batch Manufacturing Records (BMRs), GLP/GMP laboratory environment, cross-functional client milestone delivery.");
+
+    // Professional Experience
+    addSection("Professional Experience");
+    children.push(new Paragraph({
+      spacing: { before: 80, after: 30 },
+      children: [
+        new TextRun({ text: "SYNGENE INTERNATIONAL LIMITED", bold: true, size: 21, font: "Calibri", color: "111827" }),
+        new TextRun({ text: "  |  Bengaluru, India", size: 19, font: "Calibri", color: "6B7280" })
+      ]
+    }));
+    children.push(new Paragraph({
+      spacing: { after: 60 },
+      children: [
+        new TextRun({ text: "Senior Scientist – Discovery Biology", italics: true, bold: true, size: 20, font: "Calibri", color: "374151" }),
+        new TextRun({ text: "  |  May 2022 – Present", size: 19, font: "Calibri", color: "6B7280" })
+      ]
+    }));
+    addBullet("Biotherapeutic Downstream Purification:", "Lead multi-step preparative chromatography purification for 40+ recombinant therapeutic projects, including mono- and bi-specific antibodies and His-tagged proteins using AKTA Pure and AKTA Avant systems.");
+    addBullet("Chromatography Method Development:", "Developed, scaled, and standardized chromatographic workflows across Protein A/G, Ni-NTA, CEX, AEX, HIC, and SEC, consistently achieving >95% monomer purity and high recovery yields.");
+    addBullet("Bioprocess & TFF Filtration:", "Formulated and optimized Tangential Flow Filtration (TFF) and ultrafiltration/diafiltration (UF/DF) operational parameters, improving cycle turnaround by 25% while safeguarding product stability.");
+    addBullet("Analytical Release Testing:", "Conducted routine release testing and quality characterization via SEC-HPLC aggregate profiling, reducing and non-reducing SDS-PAGE, Western blot validation, UV-Vis, and Endosafe kinetic LAL endotoxin quantification.");
+    addBullet("Cross-Functional Client Delivery:", "Collaborated with cross-functional Discovery Biology and analytical teams to optimize protocols, troubleshoot challenging aggregation barriers, and ensure timely delivery of complex proteins for global biopharma clients.");
+    addBullet("Syngene SPOT Award:", "Recognized with departmental SPOT Award (Feb 2023) for producing and delivering highly challenging proteins within compressed timelines, earning direct client commendation.");
+
+    children.push(new Paragraph({
+      spacing: { before: 100, after: 30 },
+      children: [
+        new TextRun({ text: "RAJIV GANDHI CENTRE FOR BIOTECHNOLOGY (RGCB)", bold: true, size: 21, font: "Calibri", color: "111827" }),
+        new TextRun({ text: "  |  Trivandrum, India", size: 19, font: "Calibri", color: "6B7280" })
+      ]
+    }));
+    children.push(new Paragraph({
+      spacing: { after: 60 },
+      children: [
+        new TextRun({ text: "Research Trainee – Human Molecular Genetics Laboratory", italics: true, bold: true, size: 20, font: "Calibri", color: "374151" }),
+        new TextRun({ text: "  |  Oct 2021 – Apr 2022", size: 19, font: "Calibri", color: "6B7280" })
+      ]
+    }));
+    addBullet("Genetics & Molecular Workflows:", "Investigated molecular and statistical genetic approaches, genotyping workflows, and candidate gene association studies in neurodevelopmental disorders.");
+    addBullet("Experimental Execution:", "Performed primer design, PCR optimization, agarose gel electrophoresis, RNA/DNA isolation, cell culture, and Sanger sequencing analyses.");
+    addBullet("Computational Scripting & Publication:", "Implemented bash/Python scripts for NGS data analysis and sequence alignment; produced a review manuscript analyzing de novo genomic variations published in a peer-reviewed journal.");
+
+    // Applied Projects
+    addSection("Applied Biopharma & Computational Projects");
+    addBullet("Computational Antibody Design & Developability (IBAB Hackathon, Dec 2025):", "Redesigned Keytruda (anti-PD-1) using CDR engineering and germline-based frameworks; performed 3D tertiary structure prediction via AlphaFold2 (ColabFold) and applied rational in silico mutagenesis to optimize binding affinity, conformational stability, and biophysical developability.");
+    addBullet("Oral Microbiome Biomarker Discovery for Early Cancer Detection (Jan 2026):", "Investigated 16S rRNA sequencing datasets using QIIME2 (DADA2) for denoising and ASV generation; performed alpha/beta diversity and taxonomic profiling (SILVA); developed machine learning classification models (logistic regression, decision trees) in Python/R to identify non-invasive diagnostic biomarkers.");
+
+    // Education
+    addSection("Education & Credentials");
+    children.push(new Paragraph({
+      spacing: { before: 60, after: 20 },
+      children: [
+        new TextRun({ text: "BVERSITY", bold: true, size: 21, font: "Calibri", color: "111827" }),
+        new TextRun({ text: "  |  Jul 2025 – Present", size: 19, font: "Calibri", color: "6B7280" })
+      ]
+    }));
+    children.push(new Paragraph({
+      spacing: { after: 40 },
+      children: [
+        new TextRun({ text: "Post Graduate Diploma in Bioinformatics & Genomics (Data Science)", italics: true, size: 20, font: "Calibri", color: "374151" })
+      ]
+    }));
+
+    children.push(new Paragraph({
+      spacing: { before: 40, after: 20 },
+      children: [
+        new TextRun({ text: "NORTH-EASTERN HILL UNIVERSITY (NEHU)", bold: true, size: 21, font: "Calibri", color: "111827" }),
+        new TextRun({ text: "  |  2018 – 2020", size: 19, font: "Calibri", color: "6B7280" })
+      ]
+    }));
+    children.push(new Paragraph({
+      spacing: { after: 40 },
+      children: [
+        new TextRun({ text: "Master of Science (M.Sc.) in Zoology (Honours)", italics: true, size: 20, font: "Calibri", color: "374151" }),
+        new TextRun({ text: "  |  CGPA: 5.5 on a 6-point scale", bold: true, size: 20, font: "Calibri", color: "1E3A8A" })
+      ]
+    }));
+
+    children.push(new Paragraph({
+      spacing: { before: 40, after: 20 },
+      children: [
+        new TextRun({ text: "ST. EDMUND\'S COLLEGE, NEHU", bold: true, size: 21, font: "Calibri", color: "111827" }),
+        new TextRun({ text: "  |  2015 – 2018", size: 19, font: "Calibri", color: "6B7280" })
+      ]
+    }));
+    children.push(new Paragraph({
+      spacing: { after: 60 },
+      children: [
+        new TextRun({ text: "Bachelor of Science (B.Sc.) in Zoology (Honours)", italics: true, size: 20, font: "Calibri", color: "374151" }),
+        new TextRun({ text: "  |  81.5% — First Rank Holder", bold: true, size: 20, font: "Calibri", color: "1E3A8A" })
+      ]
+    }));
+
+    // Publications & Honors
+    addSection("Publications & Honors");
+    addBullet("Peer-Reviewed Publication:", "Deb, S. (2025). The mosaic genome: De novo variations driving neurodevelopment in autism spectrum disorder, intellectual disability, and epilepsy. IP Indian Journal of Neurosciences, 11(3), 133–143.");
+    addBullet("Syngene SPOT Award (Feb 2023):", "Recognized by Dept. of Discovery Biology for producing challenging proteins within rapid timelines via optimized purification strategies.");
+    addBullet("Prof. D.C. Dhar Memorial Award (Apr 2019):", "First Rank Holder in B.Sc. Zoology Honours at St. Edmund\'s College.");
+    addBullet("Certificate of Academic Excellence (Dec 2018):", "Secured 3rd Rank in the NEHU University Merit List for B.Sc. Zoology Honours.");
+    addBullet("Rajendra Kumar Sunheri Devi Charitable Endowment Book Grant (Nov 2018):", "Awarded to top 2% of the batch for exceptional academic performance.");
+
+    // Certifications
+    addSection("Certifications & Specialized Training");
+    addBullet("Statistical Analysis & Interpretation using SPSS:", "Global Institute of Statistical Solutions (2021)");
+    addBullet("Molecular & Biochemistry Techniques:", "Training & Internship, Springfest IIT Kharagpur (2020)");
+    addBullet("Neuroscience Reconstructed - Genetics and Development:", "EPFL (edX)");
+
+    const doc = new Document({
+      sections: [{
+        properties: {
+          page: {
+            margin: { top: 720, bottom: 720, left: 864, right: 864 }
+          }
+        },
+        children
+      }]
+    });
+
+    const blob = await Packer.toBlob(doc);
+    saveBlobFile("Sudakshina_Deb_General_Resume.docx", blob);
+    showToast("Downloaded General CV: Sudakshina_Deb_General_Resume.docx");
+  } catch (err) {
+    console.error("Master Docx generation error:", err);
+    showToast("Docx generation error. Please check console.");
+  }
+}
+
 async function downloadModalDocx(jobId) {
   const id = jobId || currentDetailId;
   const job = allJobs.find(j => j.id === id);
   if (!job) {
-    showToast('Please select a job first.');
+    downloadMasterDocx();
     return;
   }
   const a = job.analysis || {};
@@ -1116,10 +1321,10 @@ async function downloadModalDocx(jobId) {
 
     // Headline
     const subTitle = isDoc
-      ? "Doctoral Researcher & Scientist | Molecular Biology & Protein Sciences"
+      ? "Doctoral Researcher & Senior Scientist | Downstream Protein Sciences & Computational Biology"
       : (/bioinform|computational|ngs|genom/i.test(role + ' ' + (a.jobCategory||''))
           ? "Bioinformatics & Downstream Protein Scientist"
-          : "Senior Scientist — Downstream Protein Sciences & Bioprocess Development");
+          : "Senior Scientist — Discovery Biology & Downstream Protein Sciences");
 
     children.push(new Paragraph({
       alignment: AlignmentType.CENTER,
@@ -1134,7 +1339,7 @@ async function downloadModalDocx(jobId) {
       alignment: AlignmentType.CENTER,
       spacing: { after: 180 },
       children: [
-        new TextRun({ text: "Bengaluru, India  |  +91 97486 44342  |  sudakshinadeb100@gmail.com  |  linkedin.com/in/sudakshina-deb-041499120", size: 19, font: "Calibri", color: "4B5563" })
+        new TextRun({ text: "Bengaluru, India  |  +91-7005314758  |  sudakshinadeb97@gmail.com  |  linkedin.com/in/sudakshina-deb", size: 19, font: "Calibri", color: "4B5563" })
       ]
     }));
 
@@ -1164,8 +1369,8 @@ async function downloadModalDocx(jobId) {
     // Professional Summary
     addSection("Professional Summary");
     const summaryText = isDoc
-      ? ('Accomplished life sciences researcher with 3.8 years of industrial research experience at Syngene International Ltd. (Biocon Group) and an M.Tech in Biotechnology & Biochemical Engineering from IIT Kharagpur (CGPA 8.78). Hands-on expertise in recombinant protein expression, AKTA chromatography purification (affinity, IEX, SEC, HIC), biophysical characterization (SEC-HPLC, SDS-PAGE), and in silico bioinformatics (Python, R, NGS analysis). Dedicated to applying advanced bioprocess and structural biology competencies to doctoral research in ' + role + ' at ' + company + '.')
-      : 'Accomplished Senior Scientist with 3.8 years of biopharmaceutical industry experience at Syngene International Ltd. specializing in downstream protein purification, bioprocess development, and analytical characterization for monoclonal antibodies (mAbs), bispecifics, and recombinant therapeutics. Expert in AKTA Avant/Pure systems, Tangential Flow Filtration (TFF), and SEC-HPLC purity profiling under ALCOA++ GDP/GLP compliance. Recipient of Syngene SPOT Award for rapid troubleshooting and high-recovery delivery. Holds M.Tech in Biotechnology from IIT Kharagpur with computational skills in Python and R.';
+      ? ('Accomplished Senior Scientist with ~4 years of industrial research experience at Syngene International Ltd. (Biocon Group), an M.Sc. in Zoology (Honours, First Rank Holder), and advanced specialization in Bioinformatics & Genomics (Bversity). Hands-on expertise in downstream chromatography purification (AKTA Pure/Avant, Affinity, IEX, SEC, HIC), biophysical characterization (SEC-HPLC, SDS-PAGE, LC-MS), and in silico bioinformatics (Python, R, NGS analysis, QIIME2, AlphaFold2). Prepared to bring industrial bench rigor, experimental troubleshooting, and multi-omics capabilities to doctoral research in ' + role + ' at ' + company + '.')
+      : ('Accomplished Senior Scientist with ~4 years of biopharmaceutical industry experience in Discovery Biology at Syngene International Ltd., specializing in downstream protein purification, bioprocess optimization, and analytical characterization for monoclonal antibodies (mAbs), bispecifics, and recombinant proteins. Expert in AKTA systems, Tangential Flow Filtration (TFF), and SEC-HPLC purity profiling under ALCOA++ GDP/GLP compliance. Recipient of the Syngene SPOT Award (Feb 2023) for rapid troubleshooting and high-recovery delivery for global biopharma clients. Combines deep wet-lab acumen with computational proficiency in Python, R, and AlphaFold2.');
 
     children.push(new Paragraph({
       spacing: { after: 120 },
@@ -1176,74 +1381,112 @@ async function downloadModalDocx(jobId) {
 
     // Core Competencies
     addSection("Core Technical Competencies");
-    addBullet("Preparative Chromatography & Downstream:", "AKTA Pure, AKTA Avant, UNICORN software; Affinity (Protein A/G, Ni-NTA His-tag), Ion Exchange (CEX, AEX), Size Exclusion (SEC), Hydrophobic Interaction (HIC).");
-    addBullet("Bioprocess & Membrane Technologies:", "Tangential Flow Filtration (TFF, Pellicon cassettes), Centricon ultrafiltration/diafiltration (UF/DF), dialysis, buffer formulation, scale-down modeling.");
-    addBullet("Analytical Characterization & QC:", "SEC-HPLC (monomer purity & aggregate profiling), SDS-PAGE (reducing/non-reducing), Western Blotting, Endosafe PTS (kinetic LAL endotoxin assays), UV-Vis spectrometry.");
-    addBullet("Biotherapeutic Modalities:", "Monoclonal antibodies (mAbs), Bispecific antibodies (bsAbs), Fc-fusion proteins, His-tagged antigens, therapeutic enzymes.");
-    addBullet("Computational Biology & Data Science:", "Python (Biopython, pandas, NumPy), R, Linux/Bash, NGS workflows, QIIME2 amplicon pipeline, AlphaFold2 structural modeling, PyMOL.");
-    addBullet("Compliance & Documentation:", "ALCOA++ data integrity standards, Standard Operating Procedures (SOPs), Batch Manufacturing Records (BMRs), GLP/GMP laboratory environment.");
+    addBullet("Downstream Processing & Chromatography:", "AKTA Pure, AKTA Avant, UNICORN; Affinity (Protein A/G, Ni-NTA His-tag), Ion Exchange (CEX, AEX), Size Exclusion (SEC/GFC), Hydrophobic Interaction (HIC); UF/DF, TFF (Pellicon cassettes), buffer exchange.");
+    addBullet("Bioanalytical Characterization & QC:", "SEC-HPLC (monomer purity & aggregate profiling), SDS-PAGE (reducing/non-reducing), Western Blotting, LC-MS/MS, Endosafe PTS (kinetic LAL endotoxin assays), UV-Vis spectrometry, flow cytometry.");
+    addBullet("Molecular Biology & Cell Workflows:", "Recombinant protein expression, PCR, primer design, Sanger sequencing, gene expression profiling, aseptic mammalian cell culture, animal handling.");
+    addBullet("Computational Biology & Data Science:", "Python (Biopython, Pandas), R (tidyverse), Linux/Bash, NGS workflows, QIIME2 amplicon pipeline (DADA2), AlphaFold2 structural modeling, PyMOL, antibody CDR engineering.");
+    addBullet("Compliance & Quality Governance:", "ALCOA++ data integrity standards, Standard Operating Procedures (SOPs), Batch Manufacturing Records (BMRs), GLP/GMP laboratory environment.");
 
     // Professional Experience
     addSection("Professional Experience");
     children.push(new Paragraph({
       spacing: { before: 80, after: 30 },
       children: [
-        new TextRun({ text: "SYNGENE INTERNATIONAL LIMITED (BIOCON GROUP)", bold: true, size: 21, font: "Calibri", color: "111827" }),
+        new TextRun({ text: "SYNGENE INTERNATIONAL LIMITED", bold: true, size: 21, font: "Calibri", color: "111827" }),
         new TextRun({ text: "  |  Bengaluru, India", size: 19, font: "Calibri", color: "6B7280" })
       ]
     }));
     children.push(new Paragraph({
       spacing: { after: 60 },
       children: [
-        new TextRun({ text: "Research Associate II — Downstream Protein Sciences & Discovery Biology", italics: true, bold: true, size: 20, font: "Calibri", color: "374151" }),
-        new TextRun({ text: "  |  Sep 2022 – Present", size: 19, font: "Calibri", color: "6B7280" })
+        new TextRun({ text: "Senior Scientist – Discovery Biology", italics: true, bold: true, size: 20, font: "Calibri", color: "374151" }),
+        new TextRun({ text: "  |  May 2022 – Present", size: 19, font: "Calibri", color: "6B7280" })
       ]
     }));
 
-    addBullet("Biotherapeutic Purification Workflows:", "Spearheaded downstream purification and recovery optimization for 30+ recombinant therapeutic projects, including mAbs, bispecific antibodies, and complex fusion constructs using AKTA systems.");
-    addBullet("Chromatography Method Development:", "Developed, scaled, and standardized multi-step chromatographic workflows across Protein A, Ni-NTA, CEX, AEX, and SEC, consistently achieving >95% monomer purity and >85% yield recovery.");
+    addBullet("Biotherapeutic Purification Workflows:", "Lead downstream purification and recovery optimization for 40+ recombinant therapeutic projects, including mAbs, bispecific antibodies, and complex fusion constructs using AKTA systems.");
+    addBullet("Chromatography Method Development:", "Developed, scaled, and standardized multi-step chromatographic workflows across Protein A/G, Ni-NTA, CEX, AEX, and SEC, consistently achieving >95% monomer purity and high recovery yields.");
     addBullet("UF/DF & TFF Parameter Optimization:", "Established Tangential Flow Filtration (TFF) and ultrafiltration/diafiltration parameters, cutting cycle time by 25% while sustaining high product stability.");
     addBullet("Analytical Release Testing:", "Conducted routine release and purity profiling using SEC-HPLC, SDS-PAGE (reducing/non-reducing), Western blot validation, and kinetic LAL endotoxin quantification.");
     addBullet("ALCOA++ Regulatory Adherence:", "Championed data integrity compliance; authored Standard Operating Procedures (SOPs) and comprehensive Batch Manufacturing Records (BMRs).");
     addBullet("Syngene SPOT Award:", "Awarded SPOT Award (Feb 2023) for outstanding technical troubleshooting and on-time delivery of critical client biotherapeutic batches under tight deadlines.");
+
+    children.push(new Paragraph({
+      spacing: { before: 100, after: 30 },
+      children: [
+        new TextRun({ text: "RAJIV GANDHI CENTRE FOR BIOTECHNOLOGY (RGCB)", bold: true, size: 21, font: "Calibri", color: "111827" }),
+        new TextRun({ text: "  |  Trivandrum, India", size: 19, font: "Calibri", color: "6B7280" })
+      ]
+    }));
+    children.push(new Paragraph({
+      spacing: { after: 60 },
+      children: [
+        new TextRun({ text: "Research Trainee – Human Molecular Genetics Laboratory", italics: true, bold: true, size: 20, font: "Calibri", color: "374151" }),
+        new TextRun({ text: "  |  Oct 2021 – Apr 2022", size: 19, font: "Calibri", color: "6B7280" })
+      ]
+    }));
+    addBullet("Genetics Workflows:", "Investigated molecular and statistical genetic approaches, genotyping workflows, and candidate gene association studies in neurodevelopmental disorders.");
+    addBullet("Molecular Techniques:", "Performed RNA/DNA extraction, primer design, PCR optimization, agarose gel electrophoresis, Sanger sequencing, and gene expression profiling.");
+    addBullet("Computational Scripting:", "Implemented bash/Python scripts for NGS data analysis and sequence alignment; produced a review manuscript analyzing de novo variations published in a peer-reviewed journal.");
+
+    // Applied Projects
+    addSection("Applied Biopharma & Computational Projects");
+    addBullet("Computational Antibody Design (IBAB Hackathon, Dec 2025):", "Redesigned Keytruda (anti-PD-1) using CDR engineering and germline-based frameworks; modeled tertiary structures using AlphaFold2 (ColabFold) and optimized developability.");
+    addBullet("Oral Microbiome Biomarker Discovery (Jan 2026):", "Analyzed 16S rRNA datasets using QIIME2 (DADA2); conducted diversity profiling (SILVA); developed machine learning models (logistic regression, decision trees) in Python/R for non-invasive early cancer detection.");
 
     // Education
     addSection("Education & Credentials");
     children.push(new Paragraph({
       spacing: { before: 80, after: 20 },
       children: [
-        new TextRun({ text: "INDIAN INSTITUTE OF TECHNOLOGY (IIT) KHARAGPUR", bold: true, size: 21, font: "Calibri", color: "111827" }),
-        new TextRun({ text: "  |  2020 – 2022", size: 19, font: "Calibri", color: "6B7280" })
+        new TextRun({ text: "BVERSITY", bold: true, size: 21, font: "Calibri", color: "111827" }),
+        new TextRun({ text: "  |  Jul 2025 – Present", size: 19, font: "Calibri", color: "6B7280" })
       ]
     }));
     children.push(new Paragraph({
       spacing: { after: 50 },
       children: [
-        new TextRun({ text: "Master of Technology (M.Tech) in Biotechnology & Biochemical Engineering", italics: true, size: 20, font: "Calibri", color: "374151" }),
-        new TextRun({ text: "  |  CGPA: 8.78 / 10.0", bold: true, size: 20, font: "Calibri", color: "1E3A8A" })
+        new TextRun({ text: "Post Graduate Diploma in Bioinformatics & Genomics (Data Science)", italics: true, size: 20, font: "Calibri", color: "374151" })
       ]
     }));
 
     children.push(new Paragraph({
       spacing: { before: 60, after: 20 },
       children: [
-        new TextRun({ text: "HERITAGE INSTITUTE OF TECHNOLOGY", bold: true, size: 21, font: "Calibri", color: "111827" }),
-        new TextRun({ text: "  |  2016 – 2020", size: 19, font: "Calibri", color: "6B7280" })
+        new TextRun({ text: "NORTH-EASTERN HILL UNIVERSITY (NEHU)", bold: true, size: 21, font: "Calibri", color: "111827" }),
+        new TextRun({ text: "  |  2018 – 2020", size: 19, font: "Calibri", color: "6B7280" })
+      ]
+    }));
+    children.push(new Paragraph({
+      spacing: { after: 50 },
+      children: [
+        new TextRun({ text: "Master of Science (M.Sc.) in Zoology (Honours)", italics: true, size: 20, font: "Calibri", color: "374151" }),
+        new TextRun({ text: "  |  CGPA: 5.5 on a 6-point scale", bold: true, size: 20, font: "Calibri", color: "1E3A8A" })
+      ]
+    }));
+
+    children.push(new Paragraph({
+      spacing: { before: 60, after: 20 },
+      children: [
+        new TextRun({ text: "ST. EDMUND\'S COLLEGE, NEHU", bold: true, size: 21, font: "Calibri", color: "111827" }),
+        new TextRun({ text: "  |  2015 – 2018", size: 19, font: "Calibri", color: "6B7280" })
       ]
     }));
     children.push(new Paragraph({
       spacing: { after: 80 },
       children: [
-        new TextRun({ text: "Bachelor of Technology (B.Tech) in Biotechnology", italics: true, size: 20, font: "Calibri", color: "374151" }),
-        new TextRun({ text: "  |  DGPA: 8.84 / 10.0", bold: true, size: 20, font: "Calibri", color: "1E3A8A" })
+        new TextRun({ text: "Bachelor of Science (B.Sc.) in Zoology (Honours)", italics: true, size: 20, font: "Calibri", color: "374151" }),
+        new TextRun({ text: "  |  81.5% — First Rank Holder", bold: true, size: 20, font: "Calibri", color: "1E3A8A" })
       ]
     }));
 
     // Honors
-    addSection("Honors & Key Achievements");
-    addBullet("Syngene SPOT Award (2023):", "Conferred for exemplary commitment and high-efficiency protein purification delivery.");
-    addBullet("Graduate Aptitude Test in Engineering (GATE):", "Qualified in Biotechnology with top percentile nationwide.");
-    addBullet("Academic Excellence Honors:", "Graduated in top 5% of class at IIT Kharagpur.");
+    addSection("Publications & Honors");
+    addBullet("Peer-Reviewed Journal Publication:", "Deb, S. (2025). The mosaic genome: De novo variations driving neurodevelopment in autism spectrum disorder, intellectual disability, and epilepsy. IP Indian Journal of Neurosciences, 11(3), 133–143.");
+    addBullet("Syngene SPOT Award (Feb 2023):", "Conferred for exemplary commitment, troubleshooting, and high-efficiency protein purification delivery.");
+    addBullet("Prof. D.C. Dhar Memorial Award (Apr 2019):", "First Rank Holder in B.Sc. Zoology Honours at St. Edmund\'s College.");
+    addBullet("Certificate of Academic Excellence (Dec 2018):", "Secured 3rd Rank in the NEHU University Merit List.");
+    addBullet("Specialized Certifications:", "SPSS Statistical Analysis (GISS, 2021); Molecular & Biochemistry Techniques (IIT Kharagpur Springfest, 2020); Neuroscience: Genetics & Development (EPFL - edX).");
 
     const doc = new Document({
       sections: [{
@@ -1305,7 +1548,7 @@ async function downloadCoverLetterDocx(jobId) {
       alignment: AlignmentType.CENTER,
       spacing: { after: 160 },
       children: [
-        new TextRun({ text: "Bengaluru, India  |  +91 97486 44342  |  sudakshinadeb100@gmail.com  |  linkedin.com/in/sudakshina-deb-041499120", size: 19, font: "Calibri", color: "4B5563" })
+        new TextRun({ text: "Bengaluru, India  |  +91-7005314758  |  sudakshinadeb97@gmail.com  |  linkedin.com/in/sudakshina-deb", size: 19, font: "Calibri", color: "4B5563" })
       ]
     }));
 
@@ -1337,17 +1580,17 @@ async function downloadCoverLetterDocx(jobId) {
     children.push(new Paragraph({
       spacing: { before: 80, after: 140 },
       children: [
-        new TextRun({ text: "Subject: Application for " + role + " (Sudakshina Deb - M.Tech IIT Kharagpur)", bold: true, size: 21, font: "Calibri", color: "1E3A8A" })
+        new TextRun({ text: "Subject: Application for " + role + " — Sudakshina Deb (Senior Scientist, Syngene International)", bold: true, size: 21, font: "Calibri", color: "1E3A8A" })
       ]
     }));
 
     const p1 = isDoc
-      ? ('Dear Professor / Selection Committee,\n\nI am writing to formally submit my application for the ' + role + ' position within ' + company + '. With an M.Tech in Biotechnology & Biochemical Engineering from IIT Kharagpur (CGPA: 8.78) and 3.8 years of industrial bioprocess research at Syngene International Ltd. (Biocon Group), I have developed a rigorous foundation in recombinant protein expression, multi-modal chromatographic purification (AKTA systems), and bioanalytical characterization. I am eager to dedicate my technical rigor and research passion to your group\'s scientific objectives.')
-      : ('Dear Hiring Team,\n\nI am writing to express my strong interest in the ' + role + ' opportunity at ' + company + '. Having spent the past 3.8 years as a Research Associate II in Downstream Protein Sciences at Syngene International Ltd. (Biocon Group) alongside completing my M.Tech in Biotechnology from IIT Kharagpur (CGPA: 8.78), I have accumulated comprehensive hands-on expertise in developing, scaling, and validating downstream purification protocols for complex biotherapeutics.');
+      ? ('Dear Professor / Selection Committee,\n\nI am writing to formally submit my application for the ' + role + ' position within ' + company + '. With ~4 years of industrial bioprocess and downstream protein research as Senior Scientist at Syngene International Ltd. (Discovery Biology), combined with postgraduate specialization in Bioinformatics & Genomics (Bversity) and an M.Sc. in Zoology (Honours, First Rank Holder), I have built an extensive experimental foundation in recombinant protein expression, multi-modal chromatographic purification (AKTA systems), and bioanalytical characterization. I am eager to dedicate my industrial bench discipline, troubleshooting acumen, and computational genomics skills to your group\'s scientific objectives.')
+      : ('Dear Hiring Team,\n\nI am writing to express my strong interest in the ' + role + ' opportunity at ' + company + '. Having spent the past ~4 years as a Senior Scientist in Discovery Biology at Syngene International Ltd., I have developed, scaled, and validated downstream purification and characterization protocols for complex biotherapeutics, including monoclonal antibodies (mAbs), bispecifics, and fusion proteins.');
 
-    const p2 = 'Throughout my tenure at Syngene, I have spearheaded the purification of over 30+ recombinant therapeutic projects—including monoclonal antibodies (mAbs), bispecifics, and fusion constructs—using AKTA Pure and Avant platforms. My day-to-day focus encompasses developing multi-step chromatography strategies (Affinity, CEX, AEX, HIC, SEC), establishing Tangential Flow Filtration (TFF) parameters, and executing release characterization via SEC-HPLC and SDS-PAGE under ALCOA++ compliance. Recognizing my ability to troubleshoot challenging aggregation barriers and deliver high-yield batches under urgent timelines, Syngene conferred upon me the SPOT Award.';
+    const p2 = 'Throughout my tenure at Syngene, I have led downstream purification for 40+ recombinant therapeutic projects using AKTA Pure and Avant platforms. My core focus spans multi-step chromatography development (Protein A/G, Ni-NTA, CEX, AEX, HIC, SEC), establishing Tangential Flow Filtration (TFF) and ultrafiltration parameters, and executing release characterization via SEC-HPLC, SDS-PAGE, and Endosafe kinetic LAL endotoxin testing under strict ALCOA++ compliance. In recognition of my ability to troubleshoot challenging aggregation barriers and deliver high-yield batches under urgent timelines, Syngene conferred upon me the departmental SPOT Award.';
 
-    const p3 = 'Beyond wet-lab execution, I bring a multidisciplinary edge with proficiency in Python, R, and NGS pipelines, enabling data automation and in silico insights. I admire ' + company + '\'s dedication to innovation in biotherapeutics and scientific discovery, and I am confident that my proven bioprocess expertise, analytical rigor, and collaborative spirit will allow me to make immediate contributions to your team.';
+    const p3 = 'Beyond wet-lab bioprocess execution, I bring a multidisciplinary edge with proficiency in Python, R, and NGS/bioinformatics pipelines (QIIME2, AlphaFold2 structural modeling), enabling data automation and in silico design insights. I admire ' + company + '\'s dedication to innovation in biotherapeutics and scientific discovery, and I am confident that my proven bioprocess expertise, analytical rigor, and collaborative spirit will allow me to make immediate contributions to your team.';
 
     const p4 = 'Thank you for your time and consideration. I welcome the opportunity to discuss my qualifications and how my background aligns with ' + company + '\'s goals in greater detail.';
 
@@ -1368,7 +1611,7 @@ async function downloadCoverLetterDocx(jobId) {
     }));
     children.push(new Paragraph({
       spacing: { after: 30 },
-      children: [new TextRun({ text: "+91 97486 44342  |  sudakshinadeb100@gmail.com", size: 19, font: "Calibri", color: "6B7280" })]
+      children: [new TextRun({ text: "+91-7005314758  |  sudakshinadeb97@gmail.com", size: 19, font: "Calibri", color: "6B7280" })]
     }));
 
     const doc = new Document({
@@ -1406,20 +1649,20 @@ function copyColdOutreach(jobId) {
 
   let message = '';
   if (isDoc) {
-    message = 'Subject: Inquiry regarding Doctoral / Research Opportunity at ' + company + ' - Sudakshina Deb (M.Tech IIT Kharagpur)\n\n' +
+    message = 'Subject: Inquiry regarding Doctoral / Research Opportunity at ' + company + ' - Sudakshina Deb\n\n' +
       'Dear Professor / Research Team,\n\n' +
       'I am writing to express my strong interest in doctoral / research opportunities within your group at ' + company + ', particularly concerning ' + role + '.\n\n' +
-      'I hold an M.Tech in Biotechnology & Biochemical Engineering from IIT Kharagpur (CGPA: 8.78) and have 3.8 years of industrial research experience at Syngene International (Biocon Group), specializing in downstream protein purification (AKTA systems), biophysical characterization, and molecular analysis. My background combines rigorous wet-lab protein chemistry with computational and NGS data analysis.\n\n' +
+      'I currently serve as Senior Scientist at Syngene International Ltd. (Discovery Biology) with ~4 years of biopharmaceutical research experience, specializing in downstream protein purification (AKTA systems), biophysical characterization, and molecular analysis. Alongside my M.Sc. in Zoology (Honours, First Rank Holder) and PG Diploma in Bioinformatics & Genomics (Bversity), I combine industrial wet-lab protein chemistry with computational NGS and AlphaFold2 data analysis.\n\n' +
       'I would be eager to discuss how my research foundation and experimental rigor could contribute to your laboratory\'s upcoming projects. My CV and research summary are available for your review.\n\n' +
       'Thank you for your time and consideration.\n\n' +
-      'Best regards,\nSudakshina Deb\nBengaluru, India | +91 97486 44342 | sudakshinadeb100@gmail.com\nlinkedin.com/in/sudakshina-deb-041499120';
+      'Best regards,\nSudakshina Deb\nBengaluru, India | +91-7005314758 | sudakshinadeb97@gmail.com\nlinkedin.com/in/sudakshina-deb';
   } else {
-    message = 'Subject: Inquiry regarding ' + role + ' - Sudakshina Deb (M.Tech IIT Kharagpur | 3.8 yrs Downstream Bioprocess)\n\n' +
+    message = 'Subject: Inquiry regarding ' + role + ' - Sudakshina Deb (Senior Scientist | ~4 yrs Downstream Biologics)\n\n' +
       'Dear ' + company + ' Hiring Team,\n\n' +
-      'I noticed the open ' + role + ' position at ' + company + ' and wanted to reach out directly. With 3.8 years of downstream bioprocess development experience at Syngene International (Biocon Group) and an M.Tech from IIT Kharagpur (CGPA 8.78), my background aligns directly with your technical requirements.\n\n' +
-      'At Syngene, I specialize in preparative protein purification (AKTA Avant/Pure, IEX, HIC, Affinity, SEC) and analytical characterization (SEC-HPLC, SDS-PAGE) for monoclonal and bispecific antibodies, earning a SPOT Award for delivering critical biotherapeutic milestones under compressed timelines.\n\n' +
-      'I would welcome the opportunity to connect for a brief 10-minute conversation to discuss how my bioprocess background can support ' + company + '\'s pipeline.\n\n' +
-      'Sincerely,\nSudakshina Deb\n+91 97486 44342 | sudakshinadeb100@gmail.com\nlinkedin.com/in/sudakshina-deb-041499120';
+      'I noticed the open ' + role + ' position at ' + company + ' and wanted to reach out directly. With ~4 years of downstream bioprocess and protein sciences experience as Senior Scientist at Syngene International Ltd., my background aligns directly with your technical requirements.\n\n' +
+      'At Syngene, I lead preparative protein purification (AKTA Avant/Pure, IEX, HIC, Affinity, SEC) and analytical characterization (SEC-HPLC, SDS-PAGE, LAL endotoxin testing) for monoclonal and bispecific antibodies, earning a SPOT Award for delivering critical biotherapeutic milestones under compressed timelines.\n\n' +
+      'I would welcome the opportunity to connect for a brief conversation to discuss how my bioprocess background can support ' + company + '\'s pipeline.\n\n' +
+      'Sincerely,\nSudakshina Deb\n+91-7005314758 | sudakshinadeb97@gmail.com\nlinkedin.com/in/sudakshina-deb';
   }
 
   copyToClipboard(message, 'Copied Cold InMail / Outreach message to clipboard!');
@@ -1515,14 +1758,14 @@ function buildTailoredResumeText(job) {
   const isDoc = isPhd(job);
   const role = a.actualRole || 'Biotech Scientist';
   const company = a.company || 'Biopharmaceutical Organization';
-  const loc = a.location || 'Bangalore, India';
+  const loc = a.location || 'Bengaluru, India';
   const strengths = a.strengths || [];
 
   if (isDoc) {
     return [
       '# SUDAKSHINA DEB',
-      '**Academic Curriculum Vitae & Doctoral Research Dossier**',
-      'Bangalore, Karnataka, India | sudakshinadeb@gmail.com | linkedin.com/in/sudakshina-deb',
+      '**Doctoral Researcher & Senior Scientist | Downstream Protein Sciences & Computational Genomics**',
+      'Bengaluru, India | +91-7005314758 | sudakshinadeb97@gmail.com | linkedin.com/in/sudakshina-deb',
       '',
       '---',
       '',
@@ -1531,60 +1774,57 @@ function buildTailoredResumeText(job) {
       '**Core Research Focus:** Macromolecular Downstream Purification, Structural Bioprocessing & Computational Genomics',
       '',
       '### ACADEMIC & RESEARCH PROFILE',
-      'Accomplished bioprocess scientist with 4 years of rigorous industrial R&D experience in downstream protein sciences at Syngene International Ltd. combined with a solid academic foundation in Zoology (M.Sc. First Class Honours, NEHU) and Bioinformatics/Genomics (PG Diploma, Bversity). Hands-on mastery of AKTA preparative chromatography, therapeutic monoclonal antibodies (mAbs), bispecifics, and high-resolution analytical characterization (SEC-HPLC, Western Blot, SDS-PAGE), augmented by computational genomics workflows (QIIME2, Python, AlphaFold2). Highly motivated to undertake doctoral research at ' + company + ', bringing proven experimental bench rigor, experimental design, and multidisciplinary bioinformatic capabilities.',
+      'Accomplished Senior Scientist with ~4 years of rigorous biopharmaceutical research experience in Discovery Biology at Syngene International Ltd., combined with advanced postgraduate training in Bioinformatics & Genomics (Bversity) and an M.Sc. in Zoology (Honours, First Rank Holder). Hands-on mastery of AKTA preparative chromatography, therapeutic monoclonal antibodies (mAbs), bispecifics, and high-resolution analytical characterization (SEC-HPLC, Western Blot, SDS-PAGE), augmented by computational genomics workflows (QIIME2, Python, AlphaFold2). Highly motivated to undertake doctoral research at ' + company + ', bringing proven industrial bench rigor, experimental design, and multidisciplinary bioinformatic capabilities.',
       '',
       '### EDUCATION & ACADEMIC CREDENTIALS',
-      '- **Post Graduate Diploma in Bioinformatics and Applied Genomics** (2022)',
-      '  *Bversity, India* — Distinction',
-      '  *Focus:* NGS pipelines, Python/R for genomics, structural bioinformatics, molecular docking.',
+      '- **Post Graduate Diploma in Bioinformatics & Genomics (Data Science)** (Jul 2025 – Present)',
+      '  *Bversity, India*',
+      '  *Focus:* NGS pipelines, Python/R for genomics, structural bioinformatics, molecular docking, machine learning.',
       '',
       '- **Master of Science (M.Sc.) in Zoology (Honours)** (2018 – 2020)',
-      '  *North-Eastern Hill University (NEHU), Shillong, Meghalaya* — First Class Honours',
-      '  *Focus:* Molecular biology, genetics, cell biology, biochemistry, biostatistics.',
+      '  *North-Eastern Hill University (NEHU), Shillong* — CGPA: 5.5 on a 6-point scale',
+      '  *Focus:* Molecular biology, genetics, biochemistry, cell biology, biostatistics.',
       '',
-      '- **Bachelor of Science (B.Sc.) in Zoology (Honours)**',
-      '  *First Class*, Core coursework in Cellular Biology, Physiology, and Genetics.',
+      '- **Bachelor of Science (B.Sc.) in Zoology (Honours)** (2015 – 2018)',
+      '  *St. Edmund\'s College, NEHU, Shillong* — 81.5% (First Rank Holder, Prof. D.C. Dhar Memorial Award)',
       '',
-      '### RESEARCH & PROFESSIONAL EXPERIENCE',
-      '**Syngene International Limited** | Bangalore, India',
-      '*Senior Scientist — Downstream Protein Sciences & Discovery Biology* (2022 – Present)',
-      '*(Promoted from Senior Research Associate)*',
-      '- Directed downstream chromatography purification and process optimization for 40+ recombinant projects, including monoclonal antibodies (mAbs), complex bispecific constructs, and His-tagged target proteins.',
-      '- Designed and optimized multi-step purification strategies utilizing AKTA Pure and AKTA Avant systems across Affinity (Protein A/G, Ni-NTA), CEX, AEX, and SEC, consistently achieving >95% monomer purity.',
+      '### PROFESSIONAL & RESEARCH EXPERIENCE',
+      '**Syngene International Limited** | Bengaluru, India',
+      '*Senior Scientist — Discovery Biology* (May 2022 – Present)',
+      '- Lead downstream chromatography purification and process optimization for 40+ recombinant projects, including monoclonal antibodies (mAbs), complex bispecific constructs, and His-tagged target proteins.',
+      '- Designed and optimized multi-step purification strategies utilizing AKTA Pure and AKTA Avant systems across Affinity (Protein A/G, Ni-NTA), CEX, AEX, HIC, and SEC, consistently achieving >95% monomer purity.',
       '- Engineered Tangential Flow Filtration (TFF) and ultrafiltration/diafiltration (UF/DF) workflows, accelerating buffer exchange turnaround by 25% while maintaining quantitative yield recovery (>90%).',
-      '- Performed analytical characterization including SEC-HPLC (purity and aggregate quantification), SDS-PAGE (reducing/non-reducing), Western Blotting, and Endosafe kinetic LAL endotoxin testing.',
+      '- Performed analytical characterization including SEC-HPLC (purity and aggregate quantification), SDS-PAGE (reducing/non-reducing), Western Blotting, UV-Vis, and Endosafe kinetic LAL endotoxin testing.',
       '- Maintained strict data integrity standards under ALCOA++ guidelines; authored Batch Manufacturing Records (BMR) and standard operating procedures (SOPs).',
       '- Awarded the Syngene SPOT Award (Feb 2023) for downstream troubleshooting and timely delivery of high-purity bispecific antibody batches.',
       '',
-      '**Rajiv Gandhi Centre for Biotechnology (RGCB) / Academic Collaboration**',
-      '*Graduate Research Fellow — Neurodevelopmental Disorder Genetics*',
-      '- Investigated genetic variants and molecular markers associated with Fragile X syndrome and intellectual developmental disabilities.',
-      '- Executed genomic DNA extraction, PCR amplifications, primer design, gel electrophoresis, and Sanger sequencing analyses.',
-      '- Co-authored 1 peer-reviewed research publication in molecular genetics.',
+      '**Rajiv Gandhi Centre for Biotechnology (RGCB)** | Trivandrum, India',
+      '*Research Trainee — Human Molecular Genetics Laboratory* (Oct 2021 – Apr 2022)',
+      '- Investigated molecular and statistical genetic approaches, genotyping workflows, and candidate gene association studies in neurodevelopmental disorders.',
+      '- Executed genomic DNA/RNA extraction, PCR amplifications, primer design, gel electrophoresis, and Sanger sequencing analyses.',
+      '- Implemented bash/Python scripts for NGS data analysis and sequence alignment; authored a review manuscript analyzing de novo variations published in a peer-reviewed journal.',
       '',
-      '### TECHNICAL & SCIENTIFIC COMPETENCIES',
-      '- **Preparative Chromatography & Equipment:** AKTA pure, AKTA avant, UNICORN software, Protein A, Protein G, Ni-NTA, CEX, AEX, HIC, SEC.',
-      '- **Bioprocess & Membrane Technologies:** Tangential Flow Filtration (TFF, Pellicon cassettes), Centricon UF/DF, dialysis, buffer formulation.',
-      '- **Analytical Characterization:** SEC-HPLC (aggregation & purity profiling), SDS-PAGE, Western Blot, Endosafe PTS (LAL endotoxin assays), UV-Vis spectrometry.',
-      '- **Computational Biology & In Silico:** Python (Biopython, Pandas, NumPy), R, Linux/Bash, NGS analysis, QIIME2 microbiome pipeline (DADA2, SILVA), AlphaFold2, PyMOL.',
-      '- **Quality & Data Governance:** ALCOA++ compliance, BMR authoring, GLP/GMP laboratory documentation.',
+      '### APPLIED BIOPHARMA & COMPUTATIONAL PROJECTS',
+      '- **Computational Antibody Design & Engineering (IBAB Hackathon, Dec 2025):** Redesigned Keytruda (anti-PD-1) using CDR engineering and germline-based frameworks; performed 3D tertiary structure prediction via AlphaFold2 (ColabFold) and applied rational in silico mutagenesis to optimize developability.',
+      '- **Oral Microbiome Biomarker Discovery for Early Cancer Detection (Jan 2026):** Processed 16S rRNA datasets using QIIME2 (DADA2); performed alpha/beta diversity and taxonomic profiling (SILVA); developed machine learning models (logistic regression, decision trees) in Python/R for early non-invasive diagnosis.',
       '',
-      '### PUBLICATIONS, AWARDS & HACKATHONS',
-      '- **Peer-Reviewed Journal Publication:** Co-author on genetic investigation of neurodevelopmental disorders (RGCB collaboration).',
-      '- **Syngene SPOT Award (Feb 2023):** Recognized for exceptional troubleshooting and downstream recovery optimization.',
-      '- **IBAB Hackathon Participant:** Computational antibody CDR engineering & binding site prediction.'
+      '### PUBLICATIONS & HONORS',
+      '- **Peer-Reviewed Journal Publication:** Deb, S. (2025). The mosaic genome: De novo variations driving neurodevelopment in autism spectrum disorder, intellectual disability, and epilepsy. IP Indian Journal of Neurosciences, 11(3), 133–143.',
+      '- **Syngene SPOT Award (Feb 2023):** Recognized for downstream recovery optimization and delivery excellence under tight timelines.',
+      '- **Prof. D.C. Dhar Memorial Award (Apr 2019):** First Rank Holder in B.Sc. Zoology Honours.',
+      '- **Certificate of Academic Excellence (Dec 2018):** Secured 3rd Rank in the NEHU University Merit List.'
     ].join('\n');
   }
 
   const isComp = /bioinform|computational|ngs|data|genom/i.test(role + ' ' + (a.jobCategory||''));
   const targetHeadline = isComp
     ? 'Bioinformatics & Downstream Protein Scientist'
-    : 'Senior Scientist — Downstream Protein Sciences & Bioprocess Development';
+    : 'Senior Scientist — Discovery Biology & Downstream Protein Sciences';
 
   return [
     '# SUDAKSHINA DEB',
     '**' + targetHeadline + '**',
-    'Bangalore, Karnataka, India | sudakshinadeb@gmail.com | linkedin.com/in/sudakshina-deb',
+    'Bengaluru, India | +91-7005314758 | sudakshinadeb97@gmail.com | linkedin.com/in/sudakshina-deb',
     '',
     '---',
     '',
@@ -1593,41 +1833,46 @@ function buildTailoredResumeText(job) {
     (strengths.length ? '*Matched Core Competencies: ' + strengths.slice(0, 3).join(' · ') + '*' : ''),
     '',
     '### PROFESSIONAL SUMMARY',
-    'Accomplished Life Sciences Senior Scientist with 4 years of biopharmaceutical industry experience at Syngene International Ltd. specializing in downstream protein purification, bioprocess development, and analytical characterization. Hands-on expert in AKTA chromatography (Protein A, Ni-NTA, IEX, SEC, HIC), Tangential Flow Filtration (TFF), and SEC-HPLC purity profiling for mAbs, bispecifics, and recombinant proteins. Combines robust wet-lab bioprocess rigor with computational proficiency in Python, R, QIIME2, and AlphaFold2. Proven record of delivering high-recovery, low-endotoxin batches under ALCOA++ standards; recipient of Syngene SPOT Award.',
+    'Results-driven Senior Scientist with ~4 years of biopharmaceutical industry experience in Discovery Biology and Downstream Protein Sciences at Syngene International Ltd. Proven track record leading end-to-end purification of complex biologics—including monoclonal antibodies (mAbs), bispecific antibodies (bsAbs), and His-tagged recombinant proteins—utilizing AKTA chromatography systems (Protein A/G, Ni-NTA, IEX, HIC, SEC) and Tangential Flow Filtration (TFF). Highly proficient in analytical release testing and quality characterization (SEC-HPLC, SDS-PAGE, Western blot, LC-MS/MS, UV-Vis, Endosafe kinetic LAL endotoxin assays) under strict GLP/ALCOA++ data integrity compliance. Seamlessly integrates wet-lab bioprocess rigor with computational genomics and bioinformatics workflows (Python, R, QIIME2, AlphaFold2). Conferred the Syngene SPOT Award (Feb 2023) for rapid troubleshooting and high-recovery protein delivery for global biopharma clients.',
     '',
-    '### CORE COMPETENCIES',
-    '- **Downstream Chromatography:** AKTA Pure, AKTA Avant, UNICORN; Affinity (Protein A/G, Ni-NTA His-tag), Ion Exchange (CEX, AEX), Size Exclusion (SEC), Hydrophobic Interaction (HIC).',
-    '- **Bioprocess & UF/DF:** Tangential Flow Filtration (TFF, Pellicon cassettes), Centricon ultrafiltration, membrane dialysis, buffer formulation & optimization.',
-    '- **Analytical & Quality Testing:** SEC-HPLC (monomer purity & aggregate quantification), SDS-PAGE (reducing/non-reducing), Western Blot, Endosafe PTS kinetic LAL endotoxin assays, UV-Vis.',
-    '- **Biotherapeutic Modalities:** Monoclonal antibodies (mAbs), Bispecific antibodies (bsAbs), Fc-fusion constructs, His-tagged antigens, therapeutic enzymes.',
-    '- **Computational & Data Analysis:** Python (Pandas, NumPy, Biopython), R, Linux/Bash, NGS workflows, QIIME2 amplicon pipeline, AlphaFold2 structural modeling, PyMOL.',
-    '- **Compliance & Standards:** ALCOA++ data integrity, Batch Manufacturing Records (BMR), Standard Operating Procedures (SOPs), GLP/GMP-aligned R&D.',
+    '### CORE TECHNICAL COMPETENCIES',
+    '- **Downstream Processing & Chromatography:** AKTA Pure, AKTA Avant, UNICORN; Affinity (Protein A/G, Ni-NTA His-tag), Ion Exchange (IEX/CEX/AEX), Hydrophobic Interaction (HIC), Size Exclusion (SEC/GFC); desalting, buffer exchange, batch binding, dialysis, ultrafiltration, and Tangential Flow Filtration (TFF, Pellicon).',
+    '- **Bioanalytical Characterization & Quality Control:** SEC-HPLC (monomer purity & aggregate profiling), SDS-PAGE (reducing/non-reducing), Western blotting, LC-MS/MS, UV-Vis spectrophotometry, Endosafe PTS/MCS (kinetic LAL endotoxin testing/removal), flow cytometry, protein impurity characterization.',
+    '- **Molecular Biology & In Vivo Operations:** Recombinant protein expression, PCR, primer design, Sanger sequencing, gene expression profiling, aseptic mammalian cell culture, passaging, in vivo animal handling (rodent procedures, model organisms).',
+    '- **Computational Biology & Data Science:** Python (Pandas, Biopython), R (tidyverse), Linux/Bash scripting, NGS genomic data analysis, QIIME2 (DADA2 pipeline), AlphaFold2 (ColabFold), antibody CDR engineering, biological databases (SILVA, NCBI BLAST, STRING, ExPASy).',
+    '- **Quality, Regulatory & Lab Operations:** ALCOA++ data integrity standards, Standard Operating Procedures (SOPs), Batch Manufacturing Records (BMRs), GLP/GMP laboratory environment, cross-functional client milestone delivery.',
     '',
     '### PROFESSIONAL EXPERIENCE',
-    '**SYNGENE INTERNATIONAL LIMITED** | Bangalore, India',
-    '*Senior Scientist — Downstream Protein Sciences & Discovery Biology* (2022 – Present)',
-    '*(Promoted from Senior Research Associate)*',
-    '- Spearheaded downstream purification and recovery optimization for 40+ biotherapeutic projects, including mAbs, bispecific antibodies, and complex recombinant proteins.',
-    '- Developed, scaled, and standardized multi-step AKTA chromatography workflows across Protein A, Ni-NTA, CEX, AEX, and SEC, consistently attaining >95% monomer purity.',
-    '- Established Tangential Flow Filtration (TFF) and ultrafiltration/diafiltration (UF/DF) parameters, cutting cycle time by 25% while sustaining >90% product recovery.',
-    '- Conducted routine release testing: SEC-HPLC aggregate analysis, reducing and non-reducing SDS-PAGE, Western blot validation, and Endosafe kinetic LAL endotoxin quantification.',
-    '- Championed ALCOA++ data integrity adherence; authored and revised Standard Operating Procedures (SOPs) and comprehensive Batch Manufacturing Records (BMRs).',
-    '- Honored with the Syngene SPOT Award (Feb 2023) for rapid downstream troubleshooting and on-time delivery of critical client biotherapeutic batches.',
+    '**SYNGENE INTERNATIONAL LIMITED** | Bengaluru, India',
+    '*Senior Scientist — Discovery Biology* (May 2022 – Present)',
+    '- Lead multi-step preparative chromatography purification for 40+ recombinant therapeutic projects, including mono- and bi-specific antibodies and His-tagged proteins using AKTA Pure and AKTA Avant systems.',
+    '- Developed, scaled, and standardized chromatographic workflows across Protein A/G, Ni-NTA, CEX, AEX, HIC, and SEC, consistently achieving >95% monomer purity and high recovery yields.',
+    '- Formulated and optimized Tangential Flow Filtration (TFF) and ultrafiltration/diafiltration (UF/DF) operational parameters, improving cycle turnaround by 25% while safeguarding product stability.',
+    '- Conducted routine release testing and quality characterization via SEC-HPLC aggregate profiling, reducing and non-reducing SDS-PAGE, Western blot validation, UV-Vis, and Endosafe kinetic LAL endotoxin quantification.',
+    '- Collaborated with cross-functional Discovery Biology and analytical teams to optimize protocols, troubleshoot challenging aggregation barriers, and ensure timely delivery of complex proteins for global biopharma clients.',
+    '- Recognized with departmental SPOT Award (Feb 2023) for producing and delivering highly challenging proteins within compressed timelines, earning direct client commendation.',
     '',
-    '**RAJIV GANDHI CENTRE FOR BIOTECHNOLOGY (RGCB) / ACADEMIC COLLABORATION**',
-    '*Graduate Research Fellow — Molecular Genetics*',
-    '- Investigated genetic variants and molecular mechanisms contributing to Fragile X syndrome and intellectual developmental disorders.',
-    '- Performed PCR amplifications, primer design, gel electrophoresis, genotyping assays, and Sanger sequencing analyses.',
-    '- Co-authored 1 peer-reviewed research publication in molecular genetics.',
+    '**RAJIV GANDHI CENTRE FOR BIOTECHNOLOGY (RGCB)** | Trivandrum, India',
+    '*Research Trainee — Human Molecular Genetics Laboratory* (Oct 2021 – Apr 2022)',
+    '- Investigated molecular and statistical genetic approaches, genotyping workflows, and candidate gene association studies in neurodevelopmental disorders.',
+    '- Performed primer design, PCR optimization, agarose gel electrophoresis, RNA/DNA isolation, cell culture, and Sanger sequencing analyses.',
+    '- Implemented bash/Python scripts for NGS data analysis and sequence alignment; produced a review manuscript analyzing de novo genomic variations published in a peer-reviewed journal.',
+    '',
+    '### APPLIED BIOPHARMA & COMPUTATIONAL PROJECTS',
+    '- **Computational Antibody Design & Developability (IBAB Hackathon, Dec 2025):** Redesigned Keytruda (anti-PD-1) using CDR engineering and germline-based frameworks; performed 3D tertiary structure prediction via AlphaFold2 (ColabFold) and applied rational in silico mutagenesis to optimize binding affinity, conformational stability, and biophysical developability.',
+    '- **Oral Microbiome Biomarker Discovery for Early Cancer Detection (Jan 2026):** Investigated 16S rRNA sequencing datasets using QIIME2 (DADA2) for denoising and ASV generation; performed alpha/beta diversity and taxonomic profiling (SILVA); developed machine learning classification models (logistic regression, decision trees) in Python/R to identify non-invasive diagnostic biomarkers.',
     '',
     '### EDUCATION & CREDENTIALS',
-    '- **Post Graduate Diploma in Bioinformatics and Applied Genomics** — Bversity (Distinction)',
-    '- **Master of Science (M.Sc.) in Zoology (Honours)** — North-Eastern Hill University (NEHU), Shillong (First Class)',
-    '- **Bachelor of Science (B.Sc.) in Zoology (Honours)** — First Class',
+    '- **Post Graduate Diploma in Bioinformatics & Genomics (Data Science)** — Bversity (Jul 2025 – Present)',
+    '- **Master of Science (M.Sc.) in Zoology (Honours)** — North-Eastern Hill University (NEHU), Shillong (2018 – 2020) | CGPA: 5.5 on a 6-point scale',
+    '- **Bachelor of Science (B.Sc.) in Zoology (Honours)** — St. Edmund\'s College, NEHU, Shillong (2015 – 2018) | 81.5% — First Rank Holder',
     '',
-    '### AWARDS & HACKATHONS',
-    '- **Syngene SPOT Award (Feb 2023):** Recognized for downstream recovery optimization and delivery excellence.',
-    '- **IBAB Computational Antibody Hackathon:** In silico CDR engineering and molecular binding site modeling.'
+    '### PUBLICATIONS & HONORS',
+    '- **Peer-Reviewed Publication:** Deb, S. (2025). The mosaic genome: De novo variations driving neurodevelopment in autism spectrum disorder, intellectual disability, and epilepsy. IP Indian Journal of Neurosciences, 11(3), 133–143.',
+    '- **Syngene SPOT Award (Feb 2023):** Department of Discovery Biology.',
+    '- **Prof. D.C. Dhar Memorial Award (Apr 2019):** First Rank Holder in B.Sc. Zoology Honours.',
+    '- **Certificate of Academic Excellence (Dec 2018):** Secured 3rd Rank in NEHU University Merit List.',
+    '- **Specialized Certifications:** Statistical Analysis using SPSS (GISS, 2021); Molecular & Biochemistry Techniques (IIT Kharagpur Springfest, 2020); Neuroscience: Genetics & Development (EPFL - edX).'
   ].join('\n');
 }
 
@@ -1636,7 +1881,7 @@ function buildResumePrompt(job) {
   const isDoc = isPhd(job);
   const role = a.actualRole || 'Biotech Scientist';
   const company = a.company || 'Organization';
-  const loc = a.location || 'Bangalore, India';
+  const loc = a.location || 'Bengaluru, India';
   const exp = a.experienceRequired || 'Not specified';
   const visa = a.visaSponsorship || 'Not specified';
   const score = a.matchScore || 0;
@@ -1665,27 +1910,33 @@ function buildResumePrompt(job) {
     'CANDIDATE MASTER DOSSIER (SUDAKSHINA DEB)\\n' +
     '==================================================\\n' +
     'Candidate: Sudakshina Deb\\n' +
-    'Contact: Bangalore, Karnataka, India | sudakshinadeb@gmail.com | linkedin.com/in/sudakshina-deb\\n\\n' +
+    'Contact: Bengaluru, India | +91-7005314758 | sudakshinadeb97@gmail.com | linkedin.com/in/sudakshina-deb\\n\\n' +
     'Current Role:\\n' +
-    '- Senior Scientist — Downstream Protein Sciences & Discovery Biology at Syngene International Ltd., Bangalore (~4 years, 2022 – Present). Promoted from Senior Research Associate.\\n' +
-    '- Key Achievements:\\n' +
-    '  * Handled downstream chromatography and recovery optimization for 40+ recombinant therapeutic projects (monoclonal antibodies/mAbs, bispecific antibodies, fusion proteins, His-tagged antigens).\\n' +
-    '  * AKTA Pure and AKTA Avant systems (UNICORN): Affinity (Protein A/G, Ni-NTA), Ion Exchange (CEX, AEX), Size Exclusion (SEC), Hydrophobic Interaction (HIC). Purity >95%.\\n' +
-    '  * Tangential Flow Filtration (TFF, Pellicon cassettes), Centricon UF/DF, dialysis; reduced cycle time by 25% while maintaining >90% yield.\\n' +
-    '  * Analytical testing: SEC-HPLC (aggregates, monomer purity), SDS-PAGE (reducing & non-reducing), Western Blot, Endosafe PTS kinetic LAL endotoxin testing, UV-Vis.\\n' +
+    '- Senior Scientist — Discovery Biology at Syngene International Ltd., Bengaluru (~4 years, May 2022 – Present).\\n' +
+    '- Key Deliverables & Industry Metrics:\\n' +
+    '  * Lead downstream chromatography purification and recovery optimization for 40+ recombinant therapeutic projects (monoclonal antibodies/mAbs, bispecific antibodies, fusion proteins, His-tagged antigens).\\n' +
+    '  * AKTA Pure and AKTA Avant systems (UNICORN): Affinity (Protein A/G, Ni-NTA), Ion Exchange (CEX, AEX), Size Exclusion (SEC/GFC), Hydrophobic Interaction (HIC). Monomer purity >95% and high yields.\\n' +
+    '  * Tangential Flow Filtration (TFF, Pellicon cassettes), Centricon UF/DF, dialysis; reduced turnaround time by 25% while sustaining >90% yield.\\n' +
+    '  * Analytical QC testing: SEC-HPLC (aggregates, monomer purity), SDS-PAGE (reducing & non-reducing), Western Blot, Endosafe PTS kinetic LAL endotoxin testing, UV-Vis, flow cytometry.\\n' +
     '  * Compliance: ALCOA++ data integrity, SOP authoring, Batch Manufacturing Records (BMR).\\n' +
-    '  * Awards: Syngene SPOT Award (Feb 2023) for yield optimization and client batch delivery.\\n\\n' +
-    'Computational & Bioinformatics Toolset:\\n' +
-    '- Languages: Python (Biopython, Pandas, NumPy), R, Linux/Bash shell.\\n' +
-    '- Genomics: QIIME2 amplicon microbiome pipeline (DADA2, SILVA database), NGS preprocessing.\\n' +
-    '- Structural: AlphaFold2 structure prediction, PyMOL visualization, antibody CDR modeling (IBAB Hackathon).\\n\\n' +
-    'Academic Research:\\n' +
-    '- Graduate Research Fellow (RGCB collaboration): Fragile X syndrome / neurodevelopmental genetics. PCR, Sanger sequencing, genotyping.\\n' +
-    '- Publication: Co-authored 1 peer-reviewed research paper in genetics.\\n\\n' +
-    'Education:\\n' +
-    '- Post Graduate Diploma in Bioinformatics & Applied Genomics — Bversity (Distinction)\\n' +
-    '- M.Sc. in Zoology (Honours) — North-Eastern Hill University (NEHU), Shillong (First Class)\\n' +
-    '- B.Sc. in Zoology (Honours) — First Class\\n\\n' +
+    '  * Awards: Syngene SPOT Award (Feb 2023) for rapid troubleshooting and high-recovery protein delivery under tight deadlines.\\n\\n' +
+    'Research Traineeship:\\n' +
+    '- Human Molecular Genetics Laboratory, Rajiv Gandhi Centre for Biotechnology (RGCB), Trivandrum (Oct 2021 – Apr 2022).\\n' +
+    '  * Genotyping workflows, NGS analysis scripting, primer design, PCR, gene expression profiling, RNA/DNA extraction, cell culture, candidate gene association studies in neurodevelopmental disorders.\\n' +
+    '  * Produced review manuscript on de novo mutations driving neurodevelopmental disorders.\\n\\n' +
+    'Applied Projects:\\n' +
+    '- Computational Antibody Design & Developability (IBAB Hackathon, Dec 2025): Redesigned Keytruda (anti-PD-1) using CDR engineering and germline-based frameworks; modeled tertiary structures using AlphaFold2 (ColabFold) and applied rational mutation strategies to optimize developability.\\n' +
+    '- Oral Microbiome Biomarker Discovery for Early Cancer Detection (Jan 2026): Analyzed 16S rRNA sequencing datasets using QIIME2 (DADA2); performed diversity analysis (SILVA) and machine learning classifiers (logistic regression, decision trees) in Python/R for early non-invasive diagnosis.\\n\\n' +
+    'Publication:\\n' +
+    '- Deb, S. (2025). The mosaic genome: De novo variations driving neurodevelopment in autism spectrum disorder, intellectual disability, and epilepsy. IP Indian Journal of Neurosciences, 11(3), 133–143.\\n\\n' +
+    'Education & Credentials:\\n' +
+    '- Post Graduate Diploma in Bioinformatics & Genomics (Data Science) — Bversity (Jul 2025 – Present)\\n' +
+    '- Master of Science (M.Sc.) in Zoology (Honours) — North-Eastern Hill University (NEHU), Shillong (2018 – 2020) | CGPA: 5.5 on a 6-point scale\\n' +
+    '- Bachelor of Science (B.Sc.) in Zoology (Honours) — St. Edmund\'s College, NEHU, Shillong (2015 – 2018) | 81.5% — First Rank Holder (Prof. D.C. Dhar Memorial Award)\\n\\n' +
+    'Certifications:\\n' +
+    '- Statistical Analysis using SPSS — Global Institute of Statistical Solutions (2021)\\n' +
+    '- Molecular & Biochemistry Techniques — Training & Internship, Springfest IIT Kharagpur (2020)\\n' +
+    '- Neuroscience Reconstructed: Genetics and Development — EPFL (edX)\\n\\n' +
     '==================================================\\n' +
     'INSTRUCTIONS FOR RESUME GENERATION\\n' +
     '==================================================\\n' +
@@ -1698,7 +1949,7 @@ function buildResumePrompt(job) {
     '   - Tailored Professional Summary / Profile\\n' +
     '   - Core Competency Matrix\\n' +
     '   - Professional Experience with high-impact STAR bullet points (Action + Metric + Result)\\n' +
-    '   - Academic Research & Dissertations\\n' +
+    '   - Applied Projects\\n' +
     '   - Education & Certifications\\n' +
     '   - Publications & Awards\\n' +
     '6. Strictly preserve factual integrity: do not fabricate unperformed degrees or techniques.';
@@ -1709,7 +1960,7 @@ function buildCoverLetterPrompt(job) {
   const isDoc = isPhd(job);
   const role = a.actualRole || 'Biotech Scientist';
   const company = a.company || 'Organization';
-  const loc = a.location || 'Bangalore, India';
+  const loc = a.location || 'Bengaluru, India';
   const strengths = (a.strengths || []).join('; ');
   const tips = (a.applicationTips || []).join('\\n- ');
 
@@ -1722,17 +1973,17 @@ function buildCoverLetterPrompt(job) {
       '- Location: ' + loc + '\\n' +
       '- Matched Strengths: ' + strengths + '\\n\\n' +
       'APPLICANT PROFILE:\\n' +
-      '- Sudakshina Deb (Bangalore, India)\\n' +
-      '- 4 years industrial R&D experience as Senior Scientist in Downstream Protein Sciences at Syngene International Ltd.\\n' +
-      '- Proven wet-lab mastery: AKTA chromatography (Protein A, Ni-NTA, CEX, SEC), mAbs, bispecifics, TFF, SEC-HPLC, Endosafe endotoxin testing, ALCOA++ compliance.\\n' +
+      '- Sudakshina Deb (Bengaluru, India | +91-7005314758 | sudakshinadeb97@gmail.com)\\n' +
+      '- ~4 years industrial research experience as Senior Scientist in Discovery Biology at Syngene International Ltd.\\n' +
+      '- Proven wet-lab mastery: AKTA chromatography (Protein A/G, Ni-NTA, CEX, SEC, HIC), mAbs, bispecifics, TFF, SEC-HPLC, Endosafe endotoxin testing, ALCOA++ compliance.\\n' +
       '- Computational capabilities: Python, R, QIIME2 microbiome analysis, AlphaFold2 structure prediction.\\n' +
-      '- Academic credentials: M.Sc. Zoology (Honours, First Class) from NEHU Shillong; PG Diploma in Bioinformatics & Genomics (Distinction) from Bversity.\\n' +
-      '- Research dissertation: Neurodevelopmental disorder genetics (Fragile X syndrome) in collaboration with Rajiv Gandhi Centre for Biotechnology (RGCB); 1 co-authored peer-reviewed publication.\\n' +
+      '- Academic credentials: M.Sc. Zoology (Honours, First Rank Holder) from NEHU Shillong; PG Diploma in Bioinformatics & Genomics from Bversity; B.Sc. Zoology (Honours, First Rank Holder) from St. Edmund\'s College.\\n' +
+      '- Research traineeship: Neurodevelopmental disorder genetics at Rajiv Gandhi Centre for Biotechnology (RGCB); 1 peer-reviewed publication in IP Indian Journal of Neurosciences (2025).\\n' +
       '- Award: Syngene SPOT Award (Feb 2023).\\n\\n' +
       'INSTRUCTIONS:\\n' +
       '1. Write a professional, passionate, and scientifically rigorous 1-page Motivation Letter.\\n' +
       '2. Explain why this specific doctoral research at ' + company + ' aligns with her trajectory bridging industrial downstream macromolecular bioprocesses and computational biology.\\n' +
-      '3. Emphasize how her 4 years of industrial bench discipline and troubleshooting make her uniquely prepared for doctoral research.\\n' +
+      '3. Emphasize how her ~4 years of industrial bench discipline and troubleshooting make her uniquely prepared for doctoral research.\\n' +
       '4. Output in clean Markdown format with standard formal academic letter structure.';
   }
 
@@ -1745,10 +1996,10 @@ function buildCoverLetterPrompt(job) {
     '- Matched Core Strengths: ' + strengths + '\\n' +
     '- Key Guidance / Application Tips:\\n- ' + tips + '\\n\\n' +
     'CANDIDATE BACKGROUND:\\n' +
-    '- Sudakshina Deb (Bangalore, India | Senior Scientist at Syngene International Ltd., 4 years)\\n' +
-    '- Downstream protein purification, AKTA Pure/Avant (Protein A, Ni-NTA, IEX, SEC), mAbs, bispecifics, TFF, SEC-HPLC, LAL endotoxin assays, ALCOA++, SPOT Award.\\n' +
+    '- Sudakshina Deb (Bengaluru, India | +91-7005314758 | sudakshinadeb97@gmail.com | Senior Scientist at Syngene International Ltd., ~4 years)\\n' +
+    '- Downstream protein purification, AKTA Pure/Avant (Protein A, Ni-NTA, IEX, SEC, HIC), mAbs, bispecifics, TFF, SEC-HPLC, LAL endotoxin assays, ALCOA++, SPOT Award.\\n' +
     '- Computational tools: Python, R, QIIME2, AlphaFold2.\\n' +
-    '- Degrees: M.Sc. Zoology (First Class, NEHU), PG Diploma Bioinformatics (Bversity).\\n\\n' +
+    '- Degrees: M.Sc. Zoology (NEHU), PG Diploma Bioinformatics (Bversity), B.Sc. Zoology (1st Rank, St. Edmund\'s College).\\n\\n' +
     'INSTRUCTIONS:\\n' +
     '1. Craft an impactful 1-page Cover Letter tailored directly to ' + company + '\\\'s mission and the ' + role + ' requirements.\\n' +
     '2. Hook the hiring manager in the opening paragraph with relevant achievements and enthusiasm for ' + company + '.\\n' +
